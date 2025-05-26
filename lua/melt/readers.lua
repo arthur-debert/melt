@@ -104,12 +104,10 @@ function readers.read_yaml_file(filepath)
   end
 
   local ok, data = pcall(function()
-    -- lyaml.load returns a table where each document is an element in the array part
-    -- For config files, we typically expect a single document, so we take the first one
+    -- lyaml.load returns the parsed YAML directly as a table
     local docs = yaml.load(content)
-    return type(docs) == "table" and docs[1] or {}
+    return type(docs) == "table" and docs or {}
   end)
-  
   if not ok then
     print("Error: Failed to parse YAML file " .. filepath .. ": " .. tostring(data))
     return {}

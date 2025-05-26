@@ -23,9 +23,9 @@ function Config:add_table(source_table)
 end
 
 --- Reads a configuration file and merges its content.
--- Supports TOML and JSON formats.
+-- Supports TOML, JSON, and YAML formats.
 -- @param filepath Path to the configuration file.
--- @param type_hint (Optional) Type of the file, e.g., "toml" or "json".
+-- @param type_hint (Optional) Type of the file, e.g., "toml", "json", or "yaml".
 -- @return self (the Config object for chaining).
 function Config:add_file(filepath, type_hint)
   local data_to_merge
@@ -41,6 +41,8 @@ function Config:add_file(filepath, type_hint)
   -- Read file based on type
   if file_type == "json" then
     data_to_merge = readers.read_json_file(filepath)
+  elseif file_type == "yaml" or file_type == "yml" then
+    data_to_merge = readers.read_yaml_file(filepath)
   else
     -- Default to TOML for backward compatibility
     data_to_merge = readers.read_toml_file(filepath)
