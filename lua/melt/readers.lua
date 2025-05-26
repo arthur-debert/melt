@@ -1,5 +1,7 @@
--- Attempt to load toml, handle if not found for now in the reader itself.
+-- Attempt to load toml, json, and yaml libraries, handle if not found for now in the reader itself.
 local toml_status, toml = pcall(require, 'toml')
+local json_status, json = pcall(require, 'dkjson')
+local yaml_status, yaml = pcall(require, 'lyaml')
 
 local readers = {}
 
@@ -40,6 +42,76 @@ function readers.read_toml_file(filepath)
   local ok, data = pcall(toml.parse, content)
   if not ok then
     print("Error: Failed to parse TOML file " .. filepath .. ": " .. tostring(data))
+    return {}
+  end
+
+  return data
+end
+
+--- Reads a JSON file and returns its content as a Lua table.
+-- @param filepath Path to the JSON file.
+-- @return A Lua table with the JSON content, or an empty table on error.
+function readers.read_json_file(filepath)
+  if not json_status then
+    print("Warning: dkjson library not found. JSON files cannot be processed.")
+    return {}
+  end
+
+  local file, err_open = io.open(filepath, "r")
+  if not file then
+    print("Warning: Could not open file " .. filepath .. ": " .. (err_open or "unknown error"))
+    return {}
+  end
+
+  local content, err_read = file:read("*a")
+  file:close()
+
+  if not content then
+    print("Warning: Could not read file " .. filepath .. ": " .. (err_read or "unknown error"))
+    return {}
+  end
+
+  local data, _, err = json.decode(content)
+  if err then
+    print("Error: Failed to parse JSON file " .. filepath .. ": " .. tostring(err))
+    return {}
+  end
+
+  return data
+end
+
+--- Reads a YAML file and returns its content as a Lua table.
+-- @param filepath Path to the YAML file.
+-- @return A Lua table with the YAML content, or an empty table on error.
+function readers.read_yaml_file(filepath)
+  if not yaml_status then
+    print("Warning: lyaml library not found. YAML files cannot be processed.")
+    return {}
+  end
+
+  local file, err_open = io.open(filepath, "r")
+  if not file then
+    print("Warning: Could not open file " .. filepath .. ": " .. (err_open or "unknown error"))
+    return {}
+  end
+
+  local content, err_read = file:read("*a")
+  file:close()
+
+  if not content then
+    print("Warning: Could not read file " .. filepath .. ": " .. (err_read or "unknown error"))
+    return {}
+  end
+
+  local ok, data = pcall(function()
+    -- lyaml.load returns a table where each document is an element in the array part
+    -- For config files, we typically expect a single document, so we take the first one
+    local docs = yaml.load(content)
+    return type(docs) == "table" and docs[1] or {}
+  end)
+  
+  if not ok then
+    print("Error: Failed to parse YAML file " .. filepath .. ": " .. tostring(data))
     return {}
   end
 
@@ -103,18 +175,19 @@ function readers.read_env_vars(prefix)
   -- A truly robust solution for all Lua versions to get ALL env vars might require C or platform specifics.
   -- Given the sandbox, we might not be able to get all env vars.
   -- Let's simulate by trying to access `_G.os.environ` if it exists.
-  
+
   local env_table = _G.os and _G.os.environ -- Attempt to get environment table (works on some systems like LuaJIT)
   if type(env_table) ~= "table" then
-     -- Fallback for standard Lua where os.getenv() requires specific key
-     -- This part is tricky without knowing all possible keys.
-     -- For the purpose of this exercise, we'll print a warning if we can't access a global env table.
-     -- In a real scenario, one might pass a list of expected env var names.
-     print("Warning: Cannot directly access the full environment variable table. This reader might not find all prefixed variables.")
-     print("Consider pre-defining expected environment variable names if issues persist.")
-     -- We can't iterate all env vars with standard os.getenv(), so we'd return empty or rely on passed-in keys.
-     -- For now, let's proceed as if `env_table` could be populated by some means, even if it's empty here.
-     env_table = {} -- Ensure it's a table to avoid errors in pairs.
+    -- Fallback for standard Lua where os.getenv() requires specific key
+    -- This part is tricky without knowing all possible keys.
+    -- For the purpose of this exercise, we'll print a warning if we can't access a global env table.
+    -- In a real scenario, one might pass a list of expected env var names.
+    print("Warning: Cannot directly access the full environment variable table.")
+    print("This reader might not find all prefixed variables.")
+    print("Consider pre-defining expected environment variable names if issues persist.")
+    -- We can't iterate all env vars with standard os.getenv(), so we'd return empty or rely on passed-in keys.
+    -- For now, let's proceed as if `env_table` could be populated by some means, even if it's empty here.
+    env_table = {}  -- Ensure it's a table to avoid errors in pairs.
   end
 
   for name, value in pairs(env_table) do
@@ -130,14 +203,13 @@ function readers.read_env_vars(prefix)
       end
     end
   end
-  
+
   -- If pairs(env_table) was empty or not available, we might need an alternative.
   -- For many systems, simply calling os.getenv() without arguments returns nil.
   -- This implementation primarily relies on `_G.os.environ` which is not universally standard.
   -- A more robust approach for production would involve a platform-specific C module or
   -- expecting the user to list the environment variables they care about.
   -- Given the constraints, this is a best effort.
-
   return result
 end
 

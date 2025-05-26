@@ -110,6 +110,37 @@ describe("lua-melt Library", function()
       end)
     end)
 
+    describe("read_json_file", function()
+      it("should load a valid JSON file", function()
+        local data = readers.read_json_file("spec/melt/sample_config.json")
+        assert.are.equal("JSON Example", data.title)
+        assert.are.equal("Tom Preston-Werner", data.owner.name)
+        assert.are.same({ 8000, 8001, 8002 }, data.database.ports)
+        assert.are.same({ cpu = 79.5, case = 72.0 }, data.database.temp_targets)
+      end)
+
+      it("should return an empty table for a non-existent JSON file", function()
+        local data = readers.read_json_file("spec/melt/non_existent.json")
+        assert.are.same({}, data)
+      end)
+      
+      it("should return an empty table for a malformed JSON file", function()
+        -- Setup: Create a temporary malformed JSON file
+        local malformed_json_path = "spec/melt/malformed.json"
+        local file = io.open(malformed_json_path, "w")
+        if file then
+          file:write('{"key": "value", "broken": true,') -- Missing closing brace - clearly broken
+          file:close()
+        end
+
+        local data = readers.read_json_file(malformed_json_path)
+        assert.are.same({}, data)
+
+        -- Teardown: Remove the temporary file
+        os.remove(malformed_json_path)
+      end)
+    end)
+
     describe("read_env_vars", function()
       local old_os_environ -- To store the original _G.os.environ
 
@@ -203,6 +234,21 @@ describe("lua-melt Library", function()
       local data = config:get_table()
       assert.are.equal("TOML Example", data.title)
       assert.are.equal("Tom Preston-Werner", data.owner.name)
+    end)
+
+    it(":add_file() should load and merge data from sample_config.json", function()
+      local config = Melt.new()
+      config:add_file("spec/melt/sample_config.json")
+      local data = config:get_table()
+      assert.are.equal("JSON Example", data.title)
+      assert.are.equal("Tom Preston-Werner", data.owner.name)
+    end)
+    
+    it(":add_file() should auto-detect JSON files by extension", function()
+      local config = Melt.new()
+      config:add_file("spec/melt/sample_config.json") -- .json extension
+      local data = config:get_table()
+      assert.are.equal("JSON Example", data.title)
     end)
 
     it(":add_env() should load and merge data from mocked environment variables", function()
