@@ -17,7 +17,7 @@ dependencies = {
    "penlight >= 1.14.0",
    "log.lua >= 0.1.0",
    "string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
-   "toml-lua >= 0.4"
+   "lua-toml >= 2.0-0"
 }
 test_dependencies = {
    "busted >= 2.0.0"
