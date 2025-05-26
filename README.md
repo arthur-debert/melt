@@ -16,8 +16,8 @@ predictable precedence:
 - Projects need directory-specific settings (like a .someapp file in the current
   directory)
 - Runtime adjustments via environment variables
-- Different configuration sources may use different formats (TOML, Lua tables,
-  etc.)
+- Different configuration sources may use different formats (TOML, JSON, YAML,
+  Lua tables, etc.)
 
 ## Solution
 
@@ -72,7 +72,8 @@ config:add_table({
     timeout = 5000
   })
   :add_file(os.getenv("HOME").."/.config/myapp/config.toml")  -- User preferences
-  :add_file(".myapp.toml")  -- Directory-specific settings
+   -- (TOML format)
+  :add_file(".myapp.json")  -- Directory-specific settings (JSON)
   :add_env("MYAPP_")  -- Environment variables (highest precedence)
 
 -- Access configuration values with a unified view
@@ -93,8 +94,8 @@ local Melt = require("lua.melt")
 local sources = {
   { type = "table", source = { timeout = 5000 } },  -- Application defaults
   { type = "file", path = os.getenv("HOME").."/.config/myapp/config.toml" },
-    -- User config
-  { type = "file", path = ".myapp.toml" },  -- Project-specific config
+    -- User config (TOML format)
+  { type = "file", path = ".myapp.yaml" },  -- Project-specific config (YAML format)
   { type = "env", prefix = "MYAPP_" }  -- Environment variables
 }
 
@@ -109,7 +110,8 @@ local timeout = config:get("timeout")  -- From highest precedence source
 
 - **Predictable Configuration Layering**: From default settings to environment
   overrides
-- **Multiple Format Support**: Lua tables, TOML files, environment variables
+- **Multiple Format Support**: Lua tables, TOML, JSON, YAML, INI, CONFIG files,
+  environment variables
 - **Extensible Design**: Add more format readers as needed
 - **Hierarchical Access**: Use dot notation (e.g., `database.host`) to access
   nested values
@@ -129,7 +131,9 @@ local timeout = config:get("timeout")  -- From highest precedence source
 ### Adding Sources
 
 - `:add_table(table)`: Add configuration from a Lua table
-- `:add_file(path)`: Add configuration from a TOML file
+- `:add_file(path, [type_hint])`: Add configuration from a file (supports TOML,
+  JSON, YAML, INI, CONFIG formats automatically detected by file extension, or optionally
+  specified via type_hint)
 - `:add_env(prefix)`: Add configuration from environment variables with prefix
 
 ### Accessing Values
