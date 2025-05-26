@@ -17,7 +17,9 @@ dependencies = {
    "penlight >= 1.14.0",
    "log.lua >= 0.1.0",
    "string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
-   "lua-toml >= 2.0-1"  -- The module name is 'toml' despite package name being 'lua-toml'
+   "lua-toml >= 2.0-1",  -- The module name is 'toml' despite package name being 'lua-toml'
+   "dkjson >= 2.5",  -- For JSON file support
+   "lyaml >= 6.2"    -- For YAML file support
 }
 test_dependencies = {
    "busted >= 2.0.0"

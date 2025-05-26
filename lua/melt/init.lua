@@ -7,7 +7,7 @@ Config.__index = Config
 
 --- Constructor for a new Config object.
 -- @return A new Config object.
-function Config:new()
+function Config.new()
   local instance = { data = {} }
   setmetatable(instance, Config)
   return instance
@@ -23,14 +23,30 @@ function Config:add_table(source_table)
 end
 
 --- Reads a configuration file and merges its content.
--- Currently assumes TOML format.
+-- Supports TOML, JSON, and YAML formats.
 -- @param filepath Path to the configuration file.
--- @param type_hint (Optional) Type of the file, e.g., "toml". Currently ignored.
+-- @param type_hint (Optional) Type of the file, e.g., "toml", "json", or "yaml".
 -- @return self (the Config object for chaining).
 function Config:add_file(filepath, type_hint)
-  -- type_hint is available for future use if more file types are supported directly
-  -- For now, we default to TOML as per current readers.read_toml_file capability
-  local data_to_merge = readers.read_toml_file(filepath)
+  local data_to_merge
+  -- Determine file type based on type_hint or file extension
+  local file_type = type_hint
+  if not file_type then
+    -- Extract extension from filepath
+    local extension = filepath:match("%.([^%.]+)$")
+    if extension then
+      file_type = extension:lower()
+    end
+  end
+  -- Read file based on type
+  if file_type == "json" then
+    data_to_merge = readers.read_json_file(filepath)
+  elseif file_type == "yaml" or file_type == "yml" then
+    data_to_merge = readers.read_yaml_file(filepath)
+  else
+    -- Default to TOML for backward compatibility
+    data_to_merge = readers.read_toml_file(filepath)
+  end
   self.data = utils.deep_merge(self.data, data_to_merge)
   return self
 end
@@ -83,7 +99,7 @@ function Config:get(key_string)
       end
     end
     if current_value == nil then -- Path became invalid (e.g. array index out of bounds made current_value nil)
-        break 
+        break
     end
   end
   return current_value
