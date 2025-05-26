@@ -1,16 +1,13 @@
 rockspec_format = "3.0"
-package = "melt"
+package = "lua.melt"
 version = "0.1.0-1"
 source = {
    url = "."
 }
 description = {
-   summary = "Synthetic filesystem for isolated operations",
+   summary = "A Lua library for hierarchical configuration management.",
    detailed = [[
-      melt provides a synthetic filesystem abstraction to isolate and queue 
-      filesystem operations for batch execution. The primary goal is to separate 
-      planning from execution, allowing most of the codebase to remain functional 
-      and side-effect free.
+      lua-melt allows for merging configurations from multiple sources (defaults, files, environment variables) with a defined precedence. It supports Lua tables, TOML files, and environment variables out of the box, with an extensible design for adding more formats.
    ]],
    homepage = "https://github.com/arthur-debert/melt.lua",
    license = "MIT"
@@ -20,6 +17,7 @@ dependencies = {
    "penlight >= 1.14.0",
    "log.lua >= 0.1.0",
    "string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
+   "lua-toml >= 2.0-1"  -- The module name is 'toml' despite package name being 'lua-toml'
 }
 test_dependencies = {
    "busted >= 2.0.0"
@@ -27,8 +25,9 @@ test_dependencies = {
 build = {
    type = "builtin",
    modules = {
-      ["melt.init"] = "melt/init.lua",
-
+      ["lua.melt"] = "lua/melt/init.lua",
+      ["lua.melt.utils"] = "lua/melt/utils.lua",
+      ["lua.melt.readers"] = "lua/melt/readers.lua"
    },
    copy_directories = {"docs"}
 }
