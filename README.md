@@ -28,7 +28,8 @@ predictable precedence:
    - Application defaults (lowest precedence)
    - User preferences
    - Directory/project-specific settings
-   - Environment variables (highest precedence)
+   - Environment variables
+   - Command-line options (highest precedence)
 3. Access configuration values with intuitive dot notation
 4. Auto-convert environment variables to appropriate types (string, number,
    boolean)
@@ -74,7 +75,9 @@ config:add_table({
   :add_file(os.getenv("HOME").."/.config/myapp/config.toml")  -- User preferences
    -- (TOML format)
   :add_file(".myapp.json")  -- Directory-specific settings (JSON)
-  :add_env("MYAPP_")  -- Environment variables (highest precedence)
+  :add_env("MYAPP_")  -- Environment variables
+  :add_cmdline_options(my_cli_args) -- CLI options (highest precedence)
+                                   -- (my_cli_args from CLI parser)
 
 -- Access configuration values with a unified view
 local app_name = config:get("app_name")  -- From defaults unless overridden
@@ -96,7 +99,9 @@ local sources = {
   { type = "file", path = os.getenv("HOME").."/.config/myapp/config.toml" },
     -- User config (TOML format)
   { type = "file", path = ".myapp.yaml" },  -- Project-specific config (YAML format)
-  { type = "env", prefix = "MYAPP_" }  -- Environment variables
+  { type = "env", prefix = "MYAPP_" },  -- Environment variables
+  { type = "cmdline", source = my_cli_args } -- CLI options (highest precedence)
+                                            -- (my_cli_args from CLI parser)
 }
 
 -- Create configuration object with merged values
@@ -111,13 +116,14 @@ local timeout = config:get("timeout")  -- From highest precedence source
 - **Predictable Configuration Layering**: From default settings to environment
   overrides
 - **Multiple Format Support**: Lua tables, TOML, JSON, YAML, INI, CONFIG files,
-  environment variables
+  environment variables, and command-line arguments.
 - **Extensible Design**: Add more format readers as needed
 - **Hierarchical Access**: Use dot notation (e.g., `database.host`) to access
   nested values
-- **Type Conversion**: Environment variables are automatically converted to
-  appropriate types
+- **Type Conversion**: Environment variables and command-line arguments are
+  automatically converted to appropriate types.
 - **Clear Precedence Rules**: More specific sources override less specific ones
+  (command-line options take ultimate precedence).
 - **Array Access**: Access array elements with bracket notation (e.g.,
   `protocols[1]`)
 
@@ -135,6 +141,9 @@ local timeout = config:get("timeout")  -- From highest precedence source
   JSON, YAML, INI, CONFIG formats automatically detected by file extension, or optionally
   specified via type_hint)
 - `:add_env(prefix)`: Add configuration from environment variables with prefix
+- `:add_cmdline_options(table)`: Add configuration from a pre-parsed table of
+  command-line options. Keys with hyphens (e.g., `db-host`) are converted to
+  nested structures (`db.host`), and values are type-converted.
 
 ### Accessing Values
 

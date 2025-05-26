@@ -5,6 +5,7 @@ local toml_reader = require("lua.melt.readers.toml")
 local env_reader = require("lua.melt.readers.env")
 local ini_reader = require("lua.melt.readers.ini")
 local config_reader = require("lua.melt.readers.config")
+local cmdline_reader = require("lua.melt.readers.cmdline") -- Added cmdline reader
 
 local readers = {}
 
@@ -15,6 +16,7 @@ readers.read_toml_file = toml_reader.read_toml_file
 readers.read_env_vars = env_reader.read_env_vars
 readers.read_ini_file = ini_reader.read_ini_file
 readers.read_config_file = config_reader.read_config_file
+readers.read_cmdline_options = cmdline_reader.read_options -- Added cmdline reader function
 
 --- Returns the same table. Used for consistency with other readers.
 -- @param tbl The Lua table to return.
