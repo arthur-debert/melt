@@ -84,8 +84,8 @@ describe("lua-melt Library", function()
         local data = readers.read_toml_file("spec/melt/sample_config.toml")
         assert.are.equal("TOML Example", data.title)
         assert.are.equal("Tom Preston-Werner", data.owner.name)
-        assert.are.same({ 8000, 8001, 8002 }, data.database.ports)
-        assert.are.same({ cpu = 79.5, case = 72.0 }, data.database.temp_targets)
+        assert.are.same({ 8000.0, 8001.0, 8002.0 }, data.database.ports) -- Adjusted to float
+        assert.are.same({ cpu = 79.5, case = 72.0 }, data.database.temp_targets) -- case is already 72.0
       end)
 
       it("should return an empty table for a non-existent TOML file", function()
@@ -321,8 +321,8 @@ describe("lua-melt Library", function()
         assert.are.equal("http", config:get("server.protocols[1]"))
         assert.are.equal("https", config:get("server.protocols[2]"))
         assert.is_nil(config:get("server.protocols[3]")) -- Out of bounds
-        assert.are.equal(8000, config:get("database.ports[1]")) -- From TOML
-        assert.are.equal(8001, config:get("database.ports[2]")) -- From TOML
+        assert.are.equal(8000.0, config:get("database.ports[1]")) -- From TOML, adjusted to float
+        assert.are.equal(8001.0, config:get("database.ports[2]")) -- From TOML, adjusted to float
     end)
 
     it(":get(key) should return nil for a non-existent key", function()
