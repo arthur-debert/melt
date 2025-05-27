@@ -530,7 +530,7 @@ operation matches the expected outcome.
 Synthesizing from various style guides \[17, 36, 37, 38, 39, 40\], a set of
 common and sensible naming conventions for Lua emerges, though variations exist.
 
-#### 1. Variables:
+#### 1. Variables
 
 - Local Variables: The predominant convention is `snake_case` (e.g.,
   `my_local_variable`).\[17, 36\] This style is favored for its readability,
@@ -550,7 +550,7 @@ common and sensible naming conventions for Lua emerges, though variations exist.
   convention. The most important aspect is consistency within a given project or
   module.
 
-#### 2. Functions and Methods:
+#### 2. Functions and Methods
 
 - General Functions: Typically follow `snake_case` (e.g.,
   `calculate_total_sum()`, `process_user_input()`).\[17, 36\]
@@ -565,7 +565,7 @@ common and sensible naming conventions for Lua emerges, though variations exist.
   indicate their boolean nature (e.g., `is_valid_user()`,
   `has_pending_jobs()`).\[17, 36\]
 
-#### 3. Modules and Files:
+#### 3. Modules and Files
 
 - Module Names (Logical): The string used in `require()` (e.g.,
   `require("my_utility_module")`) and often the name of the table returned by
