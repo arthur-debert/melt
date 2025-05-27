@@ -1,0 +1,10 @@
+{
+    "database": {
+        "host": "user-db-host",
+        "password": "user-secret"
+    },
+    "logging": {
+        "level": "debug"
+    },
+    "user_setting": "from_user_config"
+}

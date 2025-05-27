@@ -1,179 +1,23 @@
-# Declarative Engine
+# User Guide: The Declarative Engine with `melt.declare()`
 
-Currently, lua.melt works with a more imperative api: you declare exactly which
-files, if the env var and so on. Since there is a very common use case and usage
-patterns, we could make this even easier for user.
+`lua.melt` offers a powerful declarative engine through the `melt.declare()` function. This approach simplifies configuration management by allowing you to specify high-level options, and `lua.melt` will then intelligently discover and merge configurations from various conventional sources. It's designed to reduce boilerplate and make common configuration patterns effortless.
 
-In this scenario, the user could specify a set of high-level options, and
-`lua.melt` would intelligently discover and merge configurations from various
-conventional sources. This approach aims to reduce boilerplate and make common
-configuration patterns effortless.
+## Why Use `melt.declare()`?
 
-## The `melt.declare()` Function
+- **Simplicity**: Define your application's configuration needs with a single function call.
+- **Convention over Configuration**: `lua.melt` automatically searches standard locations for configuration files based on your `app_name`.
+- **Automatic Precedence**: A sensible and predictable order of precedence is applied automatically, ensuring that more specific configurations override general ones.
+- **Reduced Boilerplate**: No need to manually add each configuration source if you follow common conventions.
 
-We propose a new function, `melt.declare(options)`, which would act as a smart
-constructor for your configuration object.
+## Getting Started: Basic Usage
 
-```lua
-local melt = require("lua.melt") -- Or your actual require path
-local config = melt.declare({
-  app_name = "MyApplication",
-  -- other options...
-})
-```
-
-This function would internally generate the appropriate list of sources and use
-the existing `Melt.merge()` logic to create the final configuration table. The
-key is that `melt.declare()` handles the discovery and setup of these sources
-based on conventions and the options you provide.
-
-### Core Idea
-
-The primary input would be an `app_name`. Based on this `app_name`,
-`melt.declare()` would:
-
-1.  Look for application defaults.
-2.  Scan standard system-wide, user-specific, and project-local configuration
-    directories for files matching `app_name` or common names like `config`.
-3.  Consider specified custom file paths.
-4.  Incorporate environment variables, typically prefixed with an uppercase
-    version of `app_name`.
-5.  Integrate command-line arguments.
-
-All of this would follow a clear precedence order.
-
-### Key Options for `melt.declare(options)`
-
-The `options` table passed to `melt.declare()` could include fields like:
-
-- `app_name`: (string, **required**) The name of your application (e.g.,
-  `"myapp"`, `"MyGreatTool"`). This is crucial for deriving default file names,
-  directory paths (e.g., `~/.config/myapp/`), and environment variable prefixes
-  (e.g., `MYAPP_`).
-
-- `defaults`: (table or string path, optional)
-
-  - A Lua table containing the most basic default values for your application.
-  - Alternatively, a string path to a file (e.g.,
-    `/usr/share/myapp/defaults.toml`) containing these defaults. This layer has
-    the lowest precedence.
-
-- `config_locations`: (table, optional - controls file-based configuration
-  loading)
-
-  - `system`: (boolean or string/array of strings, default: `false`)
-    - If `true`, searches standard system-wide locations (e.g.,
-      `/etc/<app_name>/`, `/etc/`).
-    - If a string or array, specifies exact system paths or directories to
-      search.
-  - `user`: (boolean or string/array of strings, default: `true`)
-    - If `true`, searches standard user-specific locations (e.g.,
-      `~/.config/<app_name>/`, `~/.<app_name>/`).
-    - If a string or array, specifies exact user-specific paths or directories.
-  - `project`: (boolean or string/array of strings, default: `true`)
-    - If `true`, searches the current working directory and potentially
-      recognized project roots (e.g., `./`, `.config/`).
-    - If a string or array, specifies exact project-relative paths or
-      directories.
-  - `custom_paths`: (array of strings, optional) An explicit list of absolute or
-    relative file paths or directories to also load configuration from.
-  - `file_names`: (array of strings, optional, default:
-    `["config", "<app_name>"]`) A list of base names (without extension) for
-    configuration files to look for within the specified locations (e.g.,
-    `config.toml`, `myapp.json`).
-  - `use_app_name_as_dir`: (boolean, optional, default: `true`) If true, in
-    standard locations like `~/.config/`, it will look for a subdirectory named
-    `<app_name>` (e.g., `~/.config/myapp/config.toml`).
-
-- `formats`: (array of strings, optional, default:
-  `["toml", "json", "yaml", "ini", "config"]`) An array of file extensions
-  (without the dot) representing the accepted configuration file formats.
-  `lua.melt` would attempt to parse files with these extensions.
-
-- `env`: (boolean or table, optional, default: `true`) Controls loading
-  configuration from environment variables.
-
-  - If `true`, enables environment variables, using a prefix derived from
-    `app_name` (e.g., `MYAPP_`).
-  - If a table, allows customization:
-    - `prefix`: (string, e.g., `"MY_CUSTOM_APP_"`) Specifies the exact prefix.
-      If not given, defaults to `string.upper(app_name) .. "_"`.
-    - `auto_parse_types`: (boolean, default: `true`) If `lua.melt` should
-      attempt to convert environment variable strings to numbers or booleans.
-    - `nested_separator`: (string, e.g., `"__"`) Defines separator for nested
-      keys (e.g., `MYAPP_DATABASE__HOST`). Defaults to `_`.
-
-- `cmd_args`: (table or boolean, optional, default: `true`) Controls loading
-  configuration from command-line arguments.
-  - If `true`, `lua.melt` might try to use a standard `arg` table if available,
-    or integrate with a known CLI parsing convention (this part requires careful
-    design for flexibility).
-  - If a table, it's assumed to be a pre-parsed table of command-line options,
-    similar to what `:add_cmdline_options()` currently accepts.
-
-### Precedence Order
-
-A critical aspect is a well-defined and sensible precedence order. Generally,
-more specific sources should override more general ones. A typical order (from
-lowest to highest precedence) would be:
-
-1.  `defaults` (coded or from default file path)
-2.  System-wide configuration files (`config_locations.system`)
-3.  User-specific configuration files (`config_locations.user`)
-4.  Project-local configuration files (`config_locations.project`)
-5.  Custom path configuration files (`config_locations.custom_paths`)
-6.  Environment variables (`env` options)
-7.  Command-line arguments (`cmd_args`)
-
-Within each file-based category, the order of files found (if multiple exist)
-would also need a clear rule (e.g., based on `file_names` order, or alphabetic).
-
-### Example Usage
+The core of the declarative engine is the `melt.declare(options)` function. At a minimum, you need to provide an `app_name`:
 
 ```lua
-local melt = require("lua.melt") -- Or your actual require path
+local melt = require("lua.melt") -- Adjust require path if necessary
 
--- 1. Define application-specific defaults directly in code (lowest precedence)
-local app_coded_defaults = {
-  logging = {
-    level = "info",
-    file = "/var/log/myapp.log" -- This might be overridden by other sources
-  },
-  feature_x_enabled = false,
-  greeting = "Hello from defaults"
-}
-
--- Assume 'arg' is the table of command-line arguments,
--- e.g., from Lua's default varargs or a CLI parser.
--- For testing, you can mock it:
--- local arg = { ["logging.level"] = "debug", feature_x_enabled = "true", ["server.port"] = 8080 }
-
-
--- 2. Use melt.declare() to set up the configuration hierarchy
 local config, errors = melt.declare({
-  app_name = "myapp",
-  defaults = app_coded_defaults,
-
-  config_locations = {
-    system  = true, -- Search /etc/myapp/config.<ext>, /etc/myapp/myapp.<ext>
-    user    = true, -- Search ~/.config/myapp/config.<ext>, etc.
-    project = { "./config/", ".config/" }, -- Search specific project directories
-    custom_paths = {
-      "conf/override.toml", -- A specific custom file
-      "/opt/global_app_settings/myapp.json"
-    },
-    file_names = {"config", "settings", "myapp"} -- Basenames to look for
-  },
-
-  formats = {"toml", "json", "yaml"}, -- Accepted file formats
-
-  env = {
-    prefix = "MYAPP_", -- e.g., MYAPP_LOGGING_LEVEL=warning MYAPP_FEATURE_X_ENABLED=true
-    auto_parse_types = true
-  },
-
-  -- Assuming 'arg' is populated by the shell or a CLI parser
-  cmd_args = arg -- Highest precedence
+  app_name = "MyAwesomeApp"
 })
 
 if errors and #errors > 0 then
@@ -183,32 +27,213 @@ if errors and #errors > 0 then
   end
 end
 
--- 3. Access configuration values
--- The values will be from the highest-precedence source that defines them.
-print("Logging Level:", config:get("logging.level")) -- Potentially overridden by CLI, then ENV, then files
-print("Feature X Enabled:", config:get("feature_x_enabled")) -- Boolean conversion from ENV/CLI is useful
-print("Greeting:", config:get("greeting"))
-print("Server Port:", config:get("server.port")) -- e.g. from CLI or a config file
-print("Database Host (might be nil):", config:get("database.host"))
-
--- Get the entire configuration as a table
-local all_settings = config:get_table()
--- require("inspect")(all_settings) -- For detailed inspection if you have an inspect library
+-- Access your configuration
+print("Setting from config:", config:get("some_setting"))
 ```
 
-This `melt.declare()` function would significantly streamline the setup for many
-applications, providing a powerful, convention-over-configuration approach while
-still allowing customization where needed. It effectively wraps the granular
-power of `Melt.merge()` and the individual `add_*` methods into a more
-user-friendly package for common scenarios.
+This simple call will:
+
+1. Look for user-specific configuration files (e.g., `~/.config/MyAwesomeApp/config.toml`, `~/.MyAwesomeApp.json`).
+2. Look for project-local configuration files (e.g., `./config.toml`, `./MyAwesomeApp.yaml`).
+3. Load environment variables prefixed with `MYAWESOMEAPP_`.
+4. Attempt to load command-line arguments (if `arg` table is available or a known convention is met).
+
+## Understanding the `options` Table
+
+The `options` table passed to `melt.declare()` allows you to customize its behavior:
+
+### 1. `app_name` (string, **required**)
+
+The name of your application (e.g., `"myapp"`, `"MyGreatTool"`). This is crucial for:
+
+- Deriving default configuration file names (e.g., `myapp.toml`).
+- Constructing paths to standard configuration directories (e.g., `~/.config/myapp/`).
+- Generating default environment variable prefixes (e.g., `MYAPP_`).
+
+### 2. `defaults` (table or string path, optional)
+
+Provides the most basic default values for your application. This layer has the **lowest precedence**.
+
+- **As a table**:
+
+    ```lua
+    defaults = {
+      log_level = "info",
+      timeout = 5000
+    }
+    ```
+
+- **As a path string**:
+
+    ```lua
+    defaults = "/usr/share/myapp/default_config.json"
+    ```
+
+### 3. `config_locations` (table, optional)
+
+Controls how `lua.melt` discovers and loads file-based configurations.
+
+- `system`: (boolean or string/array of strings, default: `false`)
+  - If `true`, searches standard system-wide locations (e.g., `/etc/<app_name>/`, `/etc/`).
+  - If a string or array, specifies exact system paths or directories to search.
+- `user`: (boolean or string/array of strings, default: `true`)
+  - If `true`, searches standard user-specific locations (e.g., `~/.config/<app_name>/`, `~/.<app_name>/`).
+  - If a string or array, specifies exact user-specific paths or directories.
+- `project`: (boolean or string/array of strings, default: `true`)
+  - If `true`, searches the current working directory and potentially recognized project roots (e.g., `./`, `.config/`).
+  - If a string or array, specifies exact project-relative paths or directories.
+- `custom_paths`: (array of strings, optional)
+    An explicit list of absolute or relative file paths or directories to also load configuration from. These are loaded after system, user, and project locations but before environment variables.
+
+    ```lua
+    custom_paths = {"/opt/custom_settings/my_app.toml", "./conf/extra.yaml"}
+    ```
+
+- `file_names`: (array of strings, optional, default: `["config", "<app_name>"]`)
+    A list of base names (without extension) for configuration files to look for within the specified locations (e.g., `config.toml`, `myapp.json`).
+
+    ```lua
+    file_names = {"settings", "app_config", "myawesomeapp"}
+    ```
+
+- `use_app_name_as_dir`: (boolean, optional, default: `true`)
+    If `true`, in standard locations like `~/.config/`, `lua.melt` will look for a subdirectory named `<app_name>` (e.g., `~/.config/myapp/config.toml`). If `false`, it will look for files directly in the parent location (e.g. `~/.config/myapp.toml`).
+
+### 4. `formats` (array of strings, optional)
+
+An array of file extensions (without the dot) representing the accepted configuration file formats.
+Default: `["toml", "json", "yaml", "ini", "config"]`
+`lua.melt` attempts to parse files with these extensions in the order provided within each directory.
+
+### 5. `env` (boolean or table, optional)
+
+Controls loading configuration from environment variables. Default: `true`.
+
+- If `true`, enables environment variables, using a prefix derived from `app_name` (e.g., `MYAWESOMEAPP_`).
+- If a table, allows customization:
+  - `prefix`: (string, e.g., `"MY_CUSTOM_APP_"`) Specifies the exact prefix. If not given, defaults to `string.upper(app_name) .. "_"`.
+  - `auto_parse_types`: (boolean, default: `true`) If `lua.melt` should attempt to convert environment variable strings to numbers or booleans.
+  - `nested_separator`: (string, e.g., `"__"`) Defines the separator for creating nested keys from environment variables (e.g., `MYAPP_DATABASE__HOST` becomes `database.host`). Defaults to `__` (double underscore).
+
+### 6. `cmd_args` (table or boolean, optional)
+
+Controls loading configuration from command-line arguments. Default: `true`.
+
+- If `true`, `lua.melt` might try to use a standard `arg` table if available globally, or integrate with a known CLI parsing convention. *This behavior might be refined for more explicit control in the future.*
+- If a table, it's assumed to be a pre-parsed table of command-line options, exactly like what `config:add_cmdline_options(your_parsed_args_table)` accepts. This is the recommended way for robust CLI argument integration.
+
+## Precedence Order (Lowest to Highest)
+
+`melt.declare()` establishes a clear and sensible precedence order:
+
+1. **`defaults`**: Values provided in the `defaults` option (either as a table or from a file).
+2. **System-wide files**: Configurations found in `config_locations.system` paths.
+3. **User-specific files**: Configurations found in `config_locations.user` paths.
+4. **Project-local files**: Configurations found in `config_locations.project` paths.
+5. **Custom path files**: Configurations specified in `config_locations.custom_paths`.
+6. **Environment variables**: Values loaded based on the `env` options.
+7. **Command-line arguments**: Values loaded based on the `cmd_args` option (especially if a pre-parsed table is provided).
+
+Within each file-based category (system, user, project, custom), if multiple files are found (e.g., `config.toml` and `myapp.json` in the same directory), their internal precedence is typically determined by the order in `options.formats` and then `options.file_names`. Generally, the last value read for a given key wins within that source type.
+
+## Comprehensive Example
+
+Let's see a more detailed example:
 
 ```lua
-local merged = melt.declare({app_defaults=/var/lib/app)
+local melt = require("lua.melt")
+
+-- 1. Define application-specific defaults (lowest precedence)
+local app_coded_defaults = {
+  logging = {
+    level = "info",
+    file = "/var/log/myapp.log" -- Might be overridden
+  },
+  feature_flags = {
+    new_dashboard = false
+  },
+  greeting = "Hello from defaults"
+}
+
+-- 2. Simulate pre-parsed command-line arguments (highest precedence)
+-- In a real app, this would come from a library like Lapp or lua-argparse.
+local parsed_cli_args = {
+  ["logging-level"] = "debug", -- Will become logging.level
+  ["feature-flags-new-dashboard"] = "true", -- Becomes feature_flags.new_dashboard
+  ["server-port"] = "8080" -- Becomes server.port
+}
+
+-- 3. Use melt.declare()
+local config, errors = melt.declare({
+  app_name = "SuperApp",
+  defaults = app_coded_defaults,
+
+  config_locations = {
+    system  = true, -- Search /etc/SuperApp/config.<ext>, /etc/SuperApp/SuperApp.<ext>
+    user    = true, -- Search ~/.config/SuperApp/config.<ext>, etc.
+    project = { "./.app_config/", "./" }, -- Search specific project directories first, then CWD
+    custom_paths = {
+      "conf/global_overrides.toml",
+      "/etc/company_wide/superapp_settings.json"
+    },
+    file_names = {"config", "settings", "SuperApp"}, -- Basenames to look for
+    use_app_name_as_dir = true -- e.g. ~/.config/SuperApp/
+  },
+
+  formats = {"toml", "json", "yaml"}, -- Accepted file formats
+
+  env = {
+    prefix = "SUPERAPP_", -- e.g., SUPERAPP_LOGGING_LEVEL=warning
+    auto_parse_types = true,
+    nested_separator = "__" -- e.g. SUPERAPP_DATABASE__HOST
+  },
+
+  cmd_args = parsed_cli_args -- Pass the pre-parsed table
+})
+
+-- 4. Handle potential errors during loading
+if errors and #errors > 0 then
+  print("Configuration loading errors encountered:")
+  for i, err_info in ipairs(errors) do
+    local msg = string.format("  %d. Message: %s", i, err_info.message or "Unknown error")
+    if err_info.source then
+      msg = msg .. string.format(" (Source: %s", err_info.source)
+      if err_info.path then
+        msg = msg .. string.format(" [%s]", err_info.path)
+      end
+      msg = msg .. ")"
+    end
+    print(msg)
+  end
+end
+
+-- 5. Access configuration values
+-- Values will be from the highest-precedence source that defines them.
+print(string.format("Application Name: %s", config:get("app_name") or "Not Set (should come from defaults or file)")) -- app_name itself isn't usually a config item this way
+print(string.format("Logging Level: %s", config:get("logging.level"))) -- Expected: "debug" (from CLI)
+print(string.format("New Dashboard Enabled: %s", tostring(config:get("feature_flags.new_dashboard")))) -- Expected: true (from CLI)
+print(string.format("Greeting: %s", config:get("greeting"))) -- Expected: "Hello from defaults" (unless overridden by a file/env)
+print(string.format("Server Port: %s", config:get("server.port"))) -- Expected: 8080 (from CLI)
+print(string.format("Database Host (from env/file): %s", config:get("database.host"))) -- e.g., set SUPERAPP_DATABASE__HOST=db.example.com
+
+-- For detailed inspection:
+-- local inspect = require("inspect") -- if you have it
+-- print(inspect(config:get_table()))
 ```
 
-```lua
-local config = melt.declare("myapp")
-  :with_defaults({timeout = 5000})
-  :skip_system_config()
-  :add_custom_path("./special-config.toml")
-```
+**To make this example runnable, you would:**
+
+- Create some dummy configuration files in the expected locations (e.g., `~/.config/SuperApp/config.toml`, `./config.json`).
+- Set some environment variables (e.g., `export SUPERAPP_DATABASE__HOST=my_db_server`).
+
+## Handling Errors
+
+The `melt.declare()` function returns two values: the configuration object (`config`) and a table of errors (`errors`). It's good practice to check the `errors` table to see if any issues occurred during the discovery or parsing of configuration sources. Each error entry in the table might contain:
+
+- `message`: A description of the error.
+- `source`: A string indicating the type of source (e.g., "file", "env").
+- `path`: The file path, if applicable.
+
+## Conclusion
+
+The `melt.declare()` function provides a high-level, convention-based way to manage your application's configuration. By understanding its options and precedence rules, you can significantly simplify your configuration setup while maintaining flexibility and control. It wraps the granular power of `lua.melt`'s manual `add_*` methods into a user-friendly package for common application scenarios.

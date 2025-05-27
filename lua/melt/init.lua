@@ -1,6 +1,9 @@
 local utils = require("lua.melt.utils")
 local readers = require("lua.melt.readers")
 
+-- Load declarative engine
+local declarative_engine = require("local.declarative")
+
 -- Forward declaration for Config object
 local Config = {}
 Config.__index = Config
@@ -95,7 +98,7 @@ function Config:get(key_string)
       else
         return nil -- Key_base is not a table, or index is invalid/missing
       end
-    else -- Regular key access
+    else           -- Regular key access
       if current_value[part] ~= nil then
         current_value = current_value[part]
       else
@@ -103,7 +106,7 @@ function Config:get(key_string)
       end
     end
     if current_value == nil then -- Path became invalid (e.g. array index out of bounds made current_value nil)
-        break
+      break
     end
   end
   return current_value
@@ -168,5 +171,10 @@ function Melt.merge(sources_list)
 
   return config_obj
 end
+
+--- Declarative configuration function
+-- @param options Table with configuration options
+-- @return DeclarativeConfig object, errors table
+Melt.declare = declarative_engine.declare
 
 return Melt
