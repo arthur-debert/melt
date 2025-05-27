@@ -2,9 +2,9 @@ name: Run Tests
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
-    branches: ['**']
+    branches: ["**"]
 
 jobs:
   test:
@@ -49,7 +49,7 @@ jobs:
       - name: Install Lua dependencies
         if: steps.cache-lua-deps.outputs.cache-hit != 'true'
         run: |
-          luarocks install --local --only-deps fsynth-0.1.0-1.rockspec
+          luarocks install --local --only-deps lua.melt-0.1.0-1.rockspec
       # on maocs, bustes comes with luarocks, but not on ubuntu:
       # Busted should now be installed via apt from .github/apt-packages.txt
       - name: Run tests
