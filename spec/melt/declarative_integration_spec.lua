@@ -119,13 +119,13 @@ port = 3306
             }
 
             local config_file = home .. "/.testapp789.toml"
-            local toml_content = [[app_name = "testapp789"
+            local toml_content = [[
+app_name = "testapp789"
 timeout = 10000
+only_in_user = "user_value"
 
 [database]
 host = "user-override-host"
-
-only_in_user = "user_value"
 ]]
 
             if create_temp_file(config_file, toml_content) then
