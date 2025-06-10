@@ -331,76 +331,20 @@ from_standard_name = true
     end)
 
     describe("Phase C - Environment variable support", function()
-        -- We'll mock the readers.read_env_vars function to test the environment variable integration
-        local original_read_env_vars
-
-        before_each(function()
-            -- Save the original function
-            original_read_env_vars = readers.read_env_vars
-
-            -- Mock the read_env_vars function to return specific test data
-            readers.read_env_vars = function(prefix, auto_parse_types, nested_separator)
-                print("Mock read_env_vars called with prefix='" .. prefix ..
-                    "', auto_parse_types=" .. tostring(auto_parse_types) ..
-                    ", nested_separator='" .. nested_separator .. "'")
-
-                -- Default behavior
-                if auto_parse_types == nil then auto_parse_types = true end
-                if nested_separator == nil then nested_separator = "__" end
-
-                -- For default ENVTESTAPP_ prefix
-                if prefix == "ENVTESTAPP_" then
-                    local result = {
-                        simple_value = "env_simple",
-                        database = {
-                            host = "env-db-host"
-                        }
-                    }
-
-                    -- Apply auto_parse_types
-                    if auto_parse_types then
-                        result.numeric_value = 42
-                        result.boolean_value = true
-                        result.database.port = 5678
-                        result.no_parse_num = 123
-                    else
-                        result.numeric_value = "42"
-                        result.boolean_value = "true"
-                        result.database.port = "5678"
-                        result.no_parse_num = "123"
-                    end
-
-                    -- For custom separator test
-                    if nested_separator == "::" then
-                        result.custom = {
-                            separator = "custom_separator_value"
-                        }
-                    end
-
-                    return result
-                end
-
-                -- For custom prefix test
-                if prefix == "CUSTOM_PREFIX_" then
-                    return {
-                        setting = "custom_prefix_value"
-                    }
-                end
-
-                -- Default empty result
-                return {}
-            end
-        end)
-
-        after_each(function()
-            -- Restore the original function
-            readers.read_env_vars = original_read_env_vars
-        end)
-
         it("should load environment variables with default options", function()
+            -- Create a mock environment with test variables
+            local mock_env = {
+                ["ENVTESTAPP_SIMPLE_VALUE"] = "env_simple",
+                ["ENVTESTAPP_NUMERIC_VALUE"] = "42",
+                ["ENVTESTAPP_BOOLEAN_VALUE"] = "true",
+                ["ENVTESTAPP_DATABASE__HOST"] = "env-db-host",
+                ["ENVTESTAPP_DATABASE__PORT"] = "5678",
+                ["OTHER_PREFIX_IGNORED"] = "should-be-ignored"
+            }
+
             local config, errors = Melt.declare({
                 app_name = "envtestapp"
-            })
+            }, mock_env) -- Pass mock environment directly
 
             assert.are.equal(0, #errors)
             assert.are.equal("env_simple", config:get("simple_value"))
@@ -408,52 +352,130 @@ from_standard_name = true
             assert.is_true(config:get("boolean_value"))                  -- Auto-converted to boolean
             assert.are.equal("env-db-host", config:get("database.host")) -- Nested via __
             assert.are.equal(5678, config:get("database.port"))          -- Nested and converted
+            assert.is_nil(config:get("ignored"))                         -- Should not load variables with other prefixes
         end)
 
         it("should support custom prefix", function()
+            -- Create a mock environment with test variables
+            local mock_env = {
+                ["CUSTOM_PREFIX_SETTING"] = "custom_prefix_value",
+                ["ENVTESTAPP_IGNORED"] = "should-be-ignored"
+            }
+
             local config, errors = Melt.declare({
                 app_name = "prefixtest",
                 env = {
                     prefix = "CUSTOM_PREFIX_"
                 }
-            })
+            }, mock_env) -- Pass mock environment directly
 
             assert.are.equal(0, #errors)
             assert.are.equal("custom_prefix_value", config:get("setting"))
+            assert.is_nil(config:get("ignored")) -- Should not be loaded with different prefix
         end)
 
         it("should respect auto_parse_types option", function()
+            -- Create a mock environment with test variables
+            local mock_env = {
+                ["ENVTESTAPP_NO_PARSE_NUM"] = "123"
+            }
+
             local config, errors = Melt.declare({
                 app_name = "envtestapp",
                 env = {
                     auto_parse_types = false
                 }
-            })
+            }, mock_env) -- Pass mock environment directly
 
             assert.are.equal(0, #errors)
             assert.are.equal("123", config:get("no_parse_num")) -- Should remain a string
         end)
 
         it("should support custom nested_separator", function()
+            -- Create a mock environment with test variables
+            local mock_env = {
+                ["ENVTESTAPP_CUSTOM::SEPARATOR"] = "custom_separator_value"
+            }
+
             local config, errors = Melt.declare({
                 app_name = "envtestapp",
                 env = {
                     nested_separator = "::"
                 }
-            })
+            }, mock_env) -- Pass mock environment directly
 
             assert.are.equal(0, #errors)
             assert.are.equal("custom_separator_value", config:get("custom.separator"))
         end)
 
         it("should disable environment variables with env=false", function()
+            -- Create a mock environment with test variables
+            local mock_env = {
+                ["ENVTESTAPP_SIMPLE_VALUE"] = "env_simple"
+            }
+
             local config, errors = Melt.declare({
                 app_name = "envtestapp",
                 env = false
-            })
+            }, mock_env) -- Pass mock environment but it should be ignored
 
             assert.are.equal(0, #errors)
             assert.is_nil(config:get("simple_value")) -- Should not be loaded
+        end)
+    end)
+
+    describe("Phase D - Command-line argument support", function()
+        it("should handle pre-parsed command-line arguments", function()
+            -- Use pre-parsed arguments directly
+            local parsed_cli_args = {
+                ["logging-level"] = "debug",
+                ["feature-flags-new-dashboard"] = "true",
+                ["server-port"] = "8080"
+            }
+
+            local config, errors = Melt.declare({
+                app_name = "cliapp",
+                cmd_args = parsed_cli_args
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("debug", config:get("logging.level"))
+            assert.is_true(config:get("feature_flags.new_dashboard"))
+            assert.are.equal(8080, config:get("server.port"))
+        end)
+
+        it("should parse arguments from provided arg table", function()
+            -- Use pre-parsed arguments directly
+            local parsed_args = {
+                ["verbose"] = true,
+                ["output-format"] = "json"
+            }
+
+            local config, errors = Melt.declare({
+                app_name = "argapp",
+                cmd_args = parsed_args
+            })
+
+            assert.are.equal(0, #errors)
+            assert.is_true(config:get("verbose"))
+            assert.are.equal("json", config:get("output.format"))
+        end)
+
+        it("should disable command-line arguments with cmd_args=false", function()
+            -- Even with pre-parsed arguments, they should be ignored when cmd_args=false
+            local parsed_args = {
+                ["verbose"] = true,
+                ["output-format"] = "json"
+            }
+
+            local config, errors = Melt.declare({
+                app_name = "disabledargapp",
+                cmd_args = false
+            })
+
+            assert.are.equal(0, #errors)
+            assert.is_nil(config:get("verbose"))
+            assert.is_nil(config:get("output.format"))
         end)
     end)
 end)
