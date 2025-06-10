@@ -1,0 +1,4 @@
+-- This module sets up the logging system for the application.
+-- It is responsible for creating the root logger which has: 
+-- a debug handler that outputs all messages to a file and a console handlker that
+-- only outputs messages with a level of warn or higher.

@@ -3,6 +3,7 @@
 -- luacheck: ignore assert.are assert.are.same assert.is_true assert.is_nil assert.has_error
 
 local Melt = require("lua.melt")
+local readers = require("lua.melt.readers")
 
 describe("Declarative Engine - Integration Tests", function()
     local temp_files = {}
@@ -326,6 +327,133 @@ from_standard_name = true
 
             -- Clean up
             os.execute("rm -rf " .. config_dir)
+        end)
+    end)
+
+    describe("Phase C - Environment variable support", function()
+        -- We'll mock the readers.read_env_vars function to test the environment variable integration
+        local original_read_env_vars
+
+        before_each(function()
+            -- Save the original function
+            original_read_env_vars = readers.read_env_vars
+
+            -- Mock the read_env_vars function to return specific test data
+            readers.read_env_vars = function(prefix, auto_parse_types, nested_separator)
+                print("Mock read_env_vars called with prefix='" .. prefix ..
+                    "', auto_parse_types=" .. tostring(auto_parse_types) ..
+                    ", nested_separator='" .. nested_separator .. "'")
+
+                -- Default behavior
+                if auto_parse_types == nil then auto_parse_types = true end
+                if nested_separator == nil then nested_separator = "__" end
+
+                -- For default ENVTESTAPP_ prefix
+                if prefix == "ENVTESTAPP_" then
+                    local result = {
+                        simple_value = "env_simple",
+                        database = {
+                            host = "env-db-host"
+                        }
+                    }
+
+                    -- Apply auto_parse_types
+                    if auto_parse_types then
+                        result.numeric_value = 42
+                        result.boolean_value = true
+                        result.database.port = 5678
+                        result.no_parse_num = 123
+                    else
+                        result.numeric_value = "42"
+                        result.boolean_value = "true"
+                        result.database.port = "5678"
+                        result.no_parse_num = "123"
+                    end
+
+                    -- For custom separator test
+                    if nested_separator == "::" then
+                        result.custom = {
+                            separator = "custom_separator_value"
+                        }
+                    end
+
+                    return result
+                end
+
+                -- For custom prefix test
+                if prefix == "CUSTOM_PREFIX_" then
+                    return {
+                        setting = "custom_prefix_value"
+                    }
+                end
+
+                -- Default empty result
+                return {}
+            end
+        end)
+
+        after_each(function()
+            -- Restore the original function
+            readers.read_env_vars = original_read_env_vars
+        end)
+
+        it("should load environment variables with default options", function()
+            local config, errors = Melt.declare({
+                app_name = "envtestapp"
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("env_simple", config:get("simple_value"))
+            assert.are.equal(42, config:get("numeric_value"))            -- Auto-converted to number
+            assert.is_true(config:get("boolean_value"))                  -- Auto-converted to boolean
+            assert.are.equal("env-db-host", config:get("database.host")) -- Nested via __
+            assert.are.equal(5678, config:get("database.port"))          -- Nested and converted
+        end)
+
+        it("should support custom prefix", function()
+            local config, errors = Melt.declare({
+                app_name = "prefixtest",
+                env = {
+                    prefix = "CUSTOM_PREFIX_"
+                }
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("custom_prefix_value", config:get("setting"))
+        end)
+
+        it("should respect auto_parse_types option", function()
+            local config, errors = Melt.declare({
+                app_name = "envtestapp",
+                env = {
+                    auto_parse_types = false
+                }
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("123", config:get("no_parse_num")) -- Should remain a string
+        end)
+
+        it("should support custom nested_separator", function()
+            local config, errors = Melt.declare({
+                app_name = "envtestapp",
+                env = {
+                    nested_separator = "::"
+                }
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("custom_separator_value", config:get("custom.separator"))
+        end)
+
+        it("should disable environment variables with env=false", function()
+            local config, errors = Melt.declare({
+                app_name = "envtestapp",
+                env = false
+            })
+
+            assert.are.equal(0, #errors)
+            assert.is_nil(config:get("simple_value")) -- Should not be loaded
         end)
     end)
 end)
