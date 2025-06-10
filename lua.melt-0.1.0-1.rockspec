@@ -15,14 +15,15 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "penlight >= 1.14.0",
-   "log.lua >= 1.0.0",
+   "lualogging >= 1.8.0",
    "string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
    "lua-toml >= 2.0-1",  -- The module name is 'toml' despite package name being 'lua-toml'
    "dkjson >= 2.5",  -- For JSON file support
    "lyaml >= 6.2"    -- For YAML file support
 }
 test_dependencies = {
-   "busted >= 2.0.0"
+   "busted >= 2.0.0",
+   "luacov"
 }
 build = {
    type = "builtin",
@@ -34,6 +35,6 @@ build = {
    copy_directories = {"docs"}
 }
 test = {
-   type = "busted",
+   type = "busted"
    -- Additional test configuration can go here
 }
