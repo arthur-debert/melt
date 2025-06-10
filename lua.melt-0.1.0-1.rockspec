@@ -30,7 +30,8 @@ build = {
    modules = {
       ["lua.melt"] = "lua/melt/init.lua",
       ["lua.melt.utils"] = "lua/melt/utils.lua",
-      ["lua.melt.readers"] = "lua/melt/readers.lua"
+      ["lua.melt.readers"] = "lua/melt/readers.lua",
+      ["lua.melt.declarative"] = "lua/melt/declarative.lua"
    },
    copy_directories = {"docs"}
 }

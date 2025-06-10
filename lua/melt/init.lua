@@ -2,7 +2,7 @@ local utils = require("lua.melt.utils")
 local readers = require("lua.melt.readers")
 
 -- Load declarative engine
-local declarative_engine = require("local.declarative")
+local declarative_engine = require("lua.melt.declarative")
 
 -- Forward declaration for Config object
 local Config = {}
