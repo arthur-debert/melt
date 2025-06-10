@@ -166,4 +166,166 @@ host = "user-override-host"
             end
         end)
     end)
+
+    describe("Phase B - Multiple configuration files", function()
+        it("should load configuration from multiple custom paths", function()
+            local home = os.getenv("HOME")
+            if not home then
+                pending("HOME environment variable not set")
+                return
+            end
+
+            -- Create multiple test files
+            local custom_dir = "./custom_config_dir"
+            os.execute("mkdir -p " .. custom_dir)
+
+            local custom_config_file = custom_dir .. "/custom_app.toml"
+            local custom_toml_content = [[
+custom_setting = "from_custom_dir"
+shared_setting = "from_custom_dir"
+]]
+            create_temp_file(custom_config_file, custom_toml_content)
+
+            local direct_file = "./direct_config.json"
+            local direct_json_content = [[{
+  "direct_setting": "from_direct_file",
+  "shared_setting": "from_direct_file"
+}]]
+            create_temp_file(direct_file, direct_json_content)
+
+            -- Create defaults for testing
+            local defaults = {
+                app_name = "multiconfigapp",
+                default_setting = "from_defaults",
+                shared_setting = "from_defaults"
+            }
+
+            local config, errors = Melt.declare({
+                app_name = "multiconfigapp",
+                defaults = defaults,
+                config_locations = {
+                    custom_paths = {
+                        custom_dir,
+                        direct_file
+                    }
+                }
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("multiconfigapp", config:get("app_name"))
+            assert.are.equal("from_defaults", config:get("default_setting"))
+            assert.are.equal("from_custom_dir", config:get("custom_setting"))
+            assert.are.equal("from_direct_file", config:get("direct_setting"))
+            -- Test precedence - direct_file was last, so it should win
+            assert.are.equal("from_direct_file", config:get("shared_setting"))
+
+            -- Clean up
+            os.execute("rm -rf " .. custom_dir)
+        end)
+
+        it("should respect the use_app_name_as_dir option", function()
+            local home = os.getenv("HOME")
+            if not home then
+                pending("HOME environment variable not set")
+                return
+            end
+
+            -- Create test directory with app name subdirectory
+            local config_dir = "./test_config_dir"
+            os.execute("mkdir -p " .. config_dir .. "/dirapptestapp")
+
+            -- Create a config file in the app subdirectory
+            local subdir_config_file = config_dir .. "/dirapptestapp/config.toml"
+            local subdir_content = [[
+app_name = "dirapptestapp"
+location = "in_app_subdir"
+]]
+            create_temp_file(subdir_config_file, subdir_content)
+
+            -- Create a config file directly in the parent directory
+            local parent_config_file = config_dir .. "/dirapptestapp.toml"
+            local parent_content = [[
+app_name = "dirapptestapp"
+location = "in_parent_dir"
+]]
+            create_temp_file(parent_config_file, parent_content)
+
+            -- Test with use_app_name_as_dir = true (default)
+            local config1, errors1 = Melt.declare({
+                app_name = "dirapptestapp",
+                config_locations = {
+                    system = false,
+                    user = false,
+                    project = false,
+                    custom_paths = { config_dir },
+                    use_app_name_as_dir = true
+                }
+            })
+
+            assert.are.equal(0, #errors1)
+            assert.are.equal("in_app_subdir", config1:get("location"))
+
+            -- Test with use_app_name_as_dir = false
+            local config2, errors2 = Melt.declare({
+                app_name = "dirapptestapp",
+                config_locations = {
+                    system = false,
+                    user = false,
+                    project = false,
+                    custom_paths = { config_dir },
+                    use_app_name_as_dir = false
+                }
+            })
+
+            assert.are.equal(0, #errors2)
+            assert.are.equal("in_parent_dir", config2:get("location"))
+
+            -- Clean up
+            os.execute("rm -rf " .. config_dir)
+        end)
+
+        it("should use custom file_names if provided", function()
+            local home = os.getenv("HOME")
+            if not home then
+                pending("HOME environment variable not set")
+                return
+            end
+
+            -- Create test directory
+            local config_dir = "./custom_names_dir"
+            os.execute("mkdir -p " .. config_dir)
+
+            -- Create a config file with custom name
+            local custom_name_file = config_dir .. "/settings.toml"
+            local custom_name_content = [[
+from_custom_name = true
+]]
+            create_temp_file(custom_name_file, custom_name_content)
+
+            -- Create a standard config file (should be ignored with custom names)
+            local standard_file = config_dir .. "/config.toml"
+            local standard_content = [[
+from_standard_name = true
+]]
+            create_temp_file(standard_file, standard_content)
+
+            local config, errors = Melt.declare({
+                app_name = "customnameapp",
+                config_locations = {
+                    system = false,
+                    user = false,
+                    project = false,
+                    custom_paths = { config_dir },
+                    file_names = { "settings", "preferences" } -- No "config"
+                }
+            })
+
+            assert.are.equal(0, #errors)
+            assert.is_true(config:get("from_custom_name"))
+            assert.is_nil(config:get("from_standard_name"))
+
+            -- Clean up
+            os.execute("rm -rf " .. config_dir)
+        end)
+    end)
 end)
