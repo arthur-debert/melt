@@ -59,7 +59,7 @@ jobs:
       - name: Install Lua dependencies
         if: steps.cache-lua-deps.outputs.cache-hit != 'true'
         run: |
-          luarocks install  --only-deps ${{ steps.get-rockspec.outputs.rockspec_file }}
+          luarocks install  --tree .luarocks --only-deps ${{ steps.get-rockspec.outputs.rockspec_file }}
       # on maocs, bustes comes with luarocks, but not on ubuntu:
       # Busted should now be installed via apt from .github/apt-packages.txt
       - name: Run tests
