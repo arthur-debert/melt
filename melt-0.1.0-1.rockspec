@@ -1,5 +1,5 @@
 rockspec_format = "3.0"
-package = "lua.melt"
+package = "melt"
 version = "0.1.0-1"
 source = {
    url = "."
@@ -15,25 +15,27 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "penlight >= 1.14.0",
-   "log.lua >= 0.1.0",
+   "lualogging >= 1.8.0",
    "string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
    "lua-toml >= 2.0-1",  -- The module name is 'toml' despite package name being 'lua-toml'
    "dkjson >= 2.5",  -- For JSON file support
    "lyaml >= 6.2"    -- For YAML file support
 }
 test_dependencies = {
-   "busted >= 2.0.0"
+   "busted >= 2.0.0",
+   "luacov"
 }
 build = {
    type = "builtin",
    modules = {
       ["lua.melt"] = "lua/melt/init.lua",
       ["lua.melt.utils"] = "lua/melt/utils.lua",
-      ["lua.melt.readers"] = "lua/melt/readers.lua"
+      ["lua.melt.readers"] = "lua/melt/readers.lua",
+      ["lua.melt.declarative"] = "lua/melt/declarative.lua"
    },
    copy_directories = {"docs"}
 }
 test = {
-   type = "busted",
+   type = "busted"
    -- Additional test configuration can go here
 }

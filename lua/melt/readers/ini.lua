@@ -7,25 +7,36 @@ local ini_reader = {}
 -- @param filepath Path to the INI file.
 -- @return A Lua table with the INI content, or an empty table on error.
 function ini_reader.read_ini_file(filepath)
-  local file, err_open = io.open(filepath, "r")
-  if not file then
-    print("Warning: Could not open file " .. filepath .. ": " .. (err_open or "unknown error"))
-    return {}
+  local results = {pcall(ini_config.read, filepath)}
+  local success = results[1]
+  local data = results[2]
+  local err_msg_from_lib = results[3] -- ini_config.read might return (nil, message)
+
+  if success then
+    if data then
+      return data, nil
+    else
+      -- ini_config.read succeeded but returned nil data. Check if it provided an error message.
+      if err_msg_from_lib then
+        return nil, tostring(err_msg_from_lib)
+      else
+        -- This case could be a truly empty INI file that parses to nil by the lib,
+        -- or file not found if the lib returns (nil, nil) for that.
+        -- For robustness against (nil,nil) on file not found, let's check file existence
+        -- if our library is silent.
+        local file_exists_check = io.open(filepath, "r")
+        if file_exists_check then
+            file_exists_check:close()
+            return nil, "INI parsing resulted in nil without specific error by library." -- Or return {}, nil if nil is valid empty
+        else
+            return nil, "Could not open file " .. filepath .. ": No such file or directory"
+        end
+      end
+    end
+  else
+    -- pcall failed, data here is the error message from pcall
+    return nil, tostring(data)
   end
-  file:close()
-  -- Use the ini_config library to read the file
-  local success, data_or_err = pcall(function()
-    return ini_config.read(filepath)
-  end)
-  if not success then
-    print("Error: Failed to parse INI file " .. filepath .. ": " .. tostring(data_or_err))
-    return {}
-  end
-  if not data_or_err then
-    print("Error: Failed to parse INI file " .. filepath .. ": unknown error")
-    return {}
-  end
-  return data_or_err
 end
 
 return ini_reader
