@@ -15,6 +15,7 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "penlight >= 1.14.0",
+   "lual >= 1.0.7",
    "string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
    "lua-toml >= 2.0-1",  -- The module name is 'toml' despite package name being 'lua-toml'
    "dkjson >= 2.5",  -- For JSON file support

@@ -4,6 +4,10 @@ local readers = require("lua.melt.readers")
 -- Load declarative engine
 local declarative_engine = require("lua.melt.declarative")
 
+-- Test lual import (Stage 2 verification)
+local lual = require("lual")
+assert(lual ~= nil, "lual import failed")
+
 -- Forward declaration for Config object
 local Config = {}
 Config.__index = Config
