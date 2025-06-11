@@ -128,7 +128,8 @@ local function try_load_config_file(base_path, formats, errors, source_type_for_
 end
 
 -- Helper function to look for configuration files in a directory
-local function try_load_config_from_dir(dir_path, file_names, formats, app_name, use_app_name_as_dir, errors, source_type_for_error)
+local function try_load_config_from_dir(dir_path, file_names, formats, app_name, use_app_name_as_dir, errors,
+                                        source_type_for_error)
     if not dir_exists(dir_path) then
         return nil, nil
     end
@@ -173,12 +174,13 @@ local function try_load_config_from_dir(dir_path, file_names, formats, app_name,
                 loaded_path = path
                 break
             elseif path then -- File was found and processed, but data is nil (parse error)
-                break -- Break if file was processed, error or not
+                break        -- Break if file was processed, error or not
             end
         end
 
-        -- If still not found by specific file_names, scan directory (fallback)
-        if not loaded_data then
+        -- Limited directory scanning fallback: only enabled for custom paths
+        -- to prevent parsing unrelated configuration files in user/system directories
+        if not loaded_data and source_type_for_error == "custom_dir_file" then
             local command = "ls -A -- '" .. dir_path .. "'"
             local handle = io.popen(command)
 
@@ -214,7 +216,7 @@ local function try_load_config_from_dir(dir_path, file_names, formats, app_name,
                                     if parse_error_msg then
                                         table.insert(errors, {
                                             message = "Failed to parse " .. filepath .. ": " .. parse_error_msg,
-                                            source  = source_type_for_error, -- Use the one from dir context
+                                            source  = source_type_for_error,
                                             path    = filepath
                                         })
                                         data = nil -- Ensure data is nil if error occurred
@@ -226,7 +228,6 @@ local function try_load_config_from_dir(dir_path, file_names, formats, app_name,
                                         break -- Found a loadable file, break from filename loop
                                     elseif parse_error_msg then
                                         -- A file of a supported type was found, but it failed to parse.
-                                        -- As per original logic, we break on the first file processed.
                                         loaded_path = filepath -- Mark that we processed this path
                                         break
                                     end
@@ -245,7 +246,7 @@ local function try_load_config_from_dir(dir_path, file_names, formats, app_name,
                 -- Error listing directory
                 table.insert(errors, {
                     message = "Failed to list directory content: " .. dir_path,
-                    source = source_type_for_error, -- Or a more specific source like "directory_scan_error"
+                    source = source_type_for_error,
                     path = dir_path
                 })
             end
@@ -330,7 +331,8 @@ local function declare(options, env_provider, arg_provider)
         else
             -- options.defaults is present but not a table or string
             table.insert(errors, {
-                message = "Invalid type for 'defaults'. Expected table or string path, got " .. type(options.defaults) .. ".",
+                message = "Invalid type for 'defaults'. Expected table or string path, got " ..
+                    type(options.defaults) .. ".",
                 source  = "options_validation",
                 key     = "defaults"
             })

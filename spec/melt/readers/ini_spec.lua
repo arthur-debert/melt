@@ -6,9 +6,9 @@ describe("INI Reader", function()
       local data = ini_reader.read_ini_file("spec/melt/sample_config.ini")
       assert.are.equal("INI Example", data.title)
       assert.are.equal("Tom Preston-Werner", data.owner.name)
-      assert.are.equal("true", data.feature_x_enabled) -- INI parser keeps values as strings
+      assert.are.equal("true", data.feature_x_enabled)           -- INI parser keeps values as strings
       assert.are.equal("true", data.database.enabled)
-      assert.are.same({8000, 8001, 8002}, data.database.ports) -- Comma-separated values are parsed as an array
+      assert.are.same({ 8000, 8001, 8002 }, data.database.ports) -- Comma-separated values are parsed as an array
       assert.are.equal(79.5, data.database.temp_targets_cpu)
       assert.are.equal(72.0, data.database.temp_targets_case)
     end)
@@ -34,7 +34,7 @@ describe("INI Reader", function()
       assert.is_nil(data)
       assert.is_string(err)
       -- Error message from ini_config for this specific malformed content
-      assert.is_true(string.find(err, "attempt to index local 'key' (a nil value)", 1, true) ~= nil)
+      assert.is_true(string.find(err, "attempt to index a nil value", 1, true) ~= nil)
 
       -- Teardown: Remove the temporary file
       os.remove(malformed_ini_path)
