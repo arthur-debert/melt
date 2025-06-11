@@ -1,5 +1,5 @@
 rockspec_format = "3.0"
-package = "lua.melt"
+package = "melt"
 version = "0.1.0-1"
 source = {
    url = "."
