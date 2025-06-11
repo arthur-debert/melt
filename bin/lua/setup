@@ -3,10 +3,10 @@
 # it works on both linux and macos.
 SPEC_PATH=$1
 
-if [ -z "$SPEC_PATH" ]; then
-    echo "Usage: $0 <rockspec-file>"
-    exit 1
-fi
+# if [ -z "$SPEC_PATH" ]; then
+#     echo "Usage: $0 <rockspec-file>"
+#     exit 1
+# fi
 
 # if linux, make sure we have the apt packages installed from .github/apt-packages.txt
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
