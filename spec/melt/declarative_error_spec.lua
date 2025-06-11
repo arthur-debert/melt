@@ -58,9 +58,9 @@ describe("Declarative Engine - Error Handling Tests", function()
             })
 
             assert.are.equal(1, #errors)
-            assert.are.equal("defaults_file_not_found", errors[1].source) -- Updated source
+            assert.are.equal("defaults_file_not_found", errors[1].source)                    -- Updated source
             assert.is_true(string.find(errors[1].message, "Defaults file not found") ~= nil) -- Updated message
-            assert.is_not_nil(config) -- Should still return config object
+            assert.is_not_nil(config)                                                        -- Should still return config object
         end)
 
         it("should report error for missing custom path file", function()
@@ -81,7 +81,7 @@ describe("Declarative Engine - Error Handling Tests", function()
 
             assert.are.equal(2, #errors)
             for _, err in ipairs(errors) do
-                assert.are.equal("custom_file_not_found", err.source) -- Updated source
+                assert.are.equal("custom_file_not_found", err.source)                                  -- Updated source
                 assert.is_true(string.find(err.message, "Custom configuration file not found") ~= nil) -- Updated message
                 assert.is_not_nil(err.path)
             end
@@ -118,7 +118,7 @@ another_key = [1,2,3 # unclosed array
                     assert.are.equal("custom_file", err.source, "Error source should be custom_file")
                     assert.are.equal(malformed_toml, err.path, "Error path should be the malformed file path")
                     assert.is_true(string.find(err.message, "Failed to parse " .. malformed_toml) ~= nil,
-                                   "Error message should indicate parsing failure and filename")
+                        "Error message should indicate parsing failure and filename")
                     -- Check for a snippet of a typical TOML parse error message if possible,
                     -- e.g., "expected '='" or "invalid table header"
                     -- This depends on the actual error message from the toml parser.
@@ -164,7 +164,7 @@ another_key = [1,2,3 # unclosed array
                     assert.are.equal("custom_file", err.source, "Error source should be custom_file")
                     assert.are.equal(malformed_json, err.path, "Error path should be the malformed file path")
                     assert.is_true(string.find(err.message, "Failed to parse " .. malformed_json) ~= nil,
-                                   "Error message should indicate parsing failure and filename")
+                        "Error message should indicate parsing failure and filename")
                     -- Example check for dkjson error (errors might vary)
                     -- assert.is_true(string.find(err.message, "expected '}'", 1, true) ~= nil, "Error message detail missing")
                 else
@@ -192,7 +192,7 @@ another_key = [1,2,3 # unclosed array
 
             assert.are.equal(1, #errors)
             local err = errors[1]
-            assert.are.equal("defaults_file_not_found", err.source) -- Updated source
+            assert.are.equal("defaults_file_not_found", err.source)                    -- Updated source
             assert.is_true(string.find(err.message, "Defaults file not found") ~= nil) -- Updated message
             assert.is_true(string.find(err.message, "missing_with_specific_path.toml") ~= nil)
         end)
@@ -214,7 +214,7 @@ another_key = [1,2,3 # unclosed array
 
             assert.are.equal(1, #errors)
             local err = errors[1]
-            assert.are.equal("custom_file_not_found", err.source) -- Updated source
+            assert.are.equal("custom_file_not_found", err.source)                                  -- Updated source
             assert.are.equal(missing_file, err.path)
             assert.is_true(string.find(err.message, "Custom configuration file not found") ~= nil) -- Updated message
             assert.is_true(string.find(err.message, missing_file) ~= nil)
@@ -302,14 +302,51 @@ valid_setting = "success"
 
     describe("edge case error scenarios", function()
         it("should handle permission denied scenarios gracefully", function()
-            -- This test is difficult to implement portably
-            -- but documents the expected behavior
-            pending("Permission testing requires platform-specific setup")
-        end)
+            local temp_dir = "./test_permission_dir"
+            if create_temp_dir(temp_dir) then
+                local restricted_file = temp_dir .. "/restricted.toml"
+                local content = "restricted_setting = 'should_not_load'"
 
-        it("should handle circular file references gracefully", function()
-            -- This would be relevant if file includes were supported
-            pending("Circular reference handling not yet implemented")
+                if create_temp_file(restricted_file, content) then
+                    -- Remove read permissions (chmod 000)
+                    local chmod_result = os.execute("chmod 000 " .. restricted_file)
+
+                    if chmod_result == 0 or chmod_result == true then
+                        local config, errors = Melt.declare({
+                            app_name = "permissionapp",
+                            config_locations = {
+                                system = false,
+                                user = false,
+                                project = false,
+                                custom_paths = { restricted_file }
+                            },
+                            env = false,
+                            cmd_args = false
+                        })
+
+                        -- Should have an error due to file being inaccessible
+                        -- (permission denied is treated like file not found)
+                        assert.are.equal(1, #errors)
+                        local err = errors[1]
+                        assert.are.equal("custom_file_not_found", err.source)
+                        assert.are.equal(restricted_file, err.path)
+                        assert.is_true(string.find(err.message, "Custom configuration file not found") ~= nil)
+
+                        -- Config should still be created (graceful degradation)
+                        assert.is_not_nil(config)
+                        assert.is_nil(config:get("restricted_setting"))
+
+                        -- Restore permissions for cleanup
+                        os.execute("chmod 644 " .. restricted_file)
+                    else
+                        pending("Cannot modify file permissions on this system")
+                    end
+                else
+                    pending("Could not create test file")
+                end
+            else
+                pending("Could not create test directory")
+            end
         end)
 
         it("should handle very large config files gracefully", function()
