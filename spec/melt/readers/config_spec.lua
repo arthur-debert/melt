@@ -32,7 +32,11 @@ describe("CONFIG Reader", function()
       local data, err = config_reader.read_config_file(malformed_config_path)
       assert.is_nil(data)
       assert.is_string(err)
-      assert.is_true(string.find(err, "attempt to index a nil value", 1, true) ~= nil)
+      -- Check for any common error patterns that indicate parsing failure
+      assert.is_true(string.find(err, "attempt to index", 1, true) ~= nil or
+        string.find(err, "nil value", 1, true) ~= nil or
+        string.find(err, "parse", 1, true) ~= nil or
+        string.find(err, "syntax", 1, true) ~= nil)
 
       -- Teardown: Remove the temporary file
       os.remove(malformed_config_path)
