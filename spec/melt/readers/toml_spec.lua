@@ -10,12 +10,14 @@ describe("TOML Reader", function()
       assert.are.same({ cpu = 79.5, case = 72.0 }, data.database.temp_targets)
     end)
 
-    it("should return an empty table for a non-existent TOML file", function()
-      local data = toml_reader.read_toml_file("spec/melt/non_existent.toml")
-      assert.are.same({}, data)
+    it("should return nil and an error message for a non-existent TOML file", function()
+      local data, err = toml_reader.read_toml_file("spec/melt/non_existent.toml")
+      assert.is_nil(data)
+      assert.is_string(err)
+      assert.is_true(string.find(err, "Could not open file") ~= nil)
     end)
-    
-    it("should return an empty table for a malformed TOML file", function()
+
+    it("should return nil and an error message for a malformed TOML file", function()
       -- Setup: Create a temporary malformed TOML file
       local malformed_toml_path = "spec/melt/readers/malformed.toml"
       local file = io.open(malformed_toml_path, "w")
@@ -24,8 +26,10 @@ describe("TOML Reader", function()
         file:close()
       end
 
-      local data = toml_reader.read_toml_file(malformed_toml_path)
-      assert.are.same({}, data)
+      local data, err = toml_reader.read_toml_file(malformed_toml_path)
+      assert.is_nil(data)
+      assert.is_string(err)
+      assert.is_true(string.find(err, "Invalid primitive on line 1", 1, true) ~= nil)
 
       -- Teardown: Remove the temporary file
       os.remove(malformed_toml_path)

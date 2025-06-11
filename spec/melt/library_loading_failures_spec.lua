@@ -52,9 +52,10 @@ describe("Library Loading Failure Tests", function()
             local json_content = '{"test": "value"}'
 
             if create_temp_file(json_file, json_content) then
-                -- Should return empty table when library is not available
-                local result = json_reader.read_json_file(json_file)
-                assert.are.same({}, result)
+                local data, err = json_reader.read_json_file(json_file)
+                assert.is_nil(data)
+                assert.is_string(err)
+                assert.is_true(string.find(err, "dkjson library not found") ~= nil)
             else
                 pending("Could not create test JSON file")
             end
@@ -81,9 +82,10 @@ describe("Library Loading Failure Tests", function()
             local yaml_content = "test: value\narray:\n  - item1\n  - item2"
 
             if create_temp_file(yaml_file, yaml_content) then
-                -- Should return empty table when library is not available
-                local result = yaml_reader.read_yaml_file(yaml_file)
-                assert.are.same({}, result)
+                local data, err = yaml_reader.read_yaml_file(yaml_file)
+                assert.is_nil(data)
+                assert.is_string(err)
+                assert.is_true(string.find(err, "lyaml library not found") ~= nil)
             else
                 pending("Could not create test YAML file")
             end
@@ -110,9 +112,10 @@ describe("Library Loading Failure Tests", function()
             local toml_content = 'test = "value"\n[section]\nkey = "nested_value"'
 
             if create_temp_file(toml_file, toml_content) then
-                -- Should return empty table when library is not available
-                local result = toml_reader.read_toml_file(toml_file)
-                assert.are.same({}, result)
+                local data, err = toml_reader.read_toml_file(toml_file)
+                assert.is_nil(data)
+                assert.is_string(err)
+                assert.are.equal("toml-lua library not found", err) -- Exact match
             else
                 pending("Could not create test TOML file")
             end
@@ -243,23 +246,30 @@ describe("Library Loading Failure Tests", function()
 
     describe("File read errors", function()
         it("should handle file permission errors gracefully", function()
+            _G.require = original_require -- Ensure original require for this test
+            package.loaded["lua.melt.readers.json"] = nil -- Force reload
             local json_reader = require("lua.melt.readers.json")
 
-            -- Try to read a file that doesn't exist
-            local result = json_reader.read_json_file("/nonexistent/path/file.json")
-            assert.are.same({}, result)
+            local data, err = json_reader.read_json_file("/nonexistent/path/file.json")
+            assert.is_nil(data)
+            assert.is_string(err)
+            assert.is_true(string.find(err, "Could not open file", 1, true) ~= nil)
         end)
 
         it("should handle malformed files gracefully", function()
+            _G.require = original_require -- Ensure original require for this test
+            package.loaded["lua.melt.readers.json"] = nil -- Force reload
             local json_reader = require("lua.melt.readers.json")
 
-            -- Create a malformed JSON file
             local malformed_file = "malformed_test.json"
-            local malformed_content = '{"incomplete": "json"' -- Missing closing brace
+            local malformed_content = '{"incomplete": "json"'
 
             if create_temp_file(malformed_file, malformed_content) then
-                local result = json_reader.read_json_file(malformed_file)
-                assert.are.same({}, result)
+                local data, err = json_reader.read_json_file(malformed_file)
+                assert.is_nil(data)
+                assert.is_string(err)
+                -- dkjson error for this specific malformed content is "unterminated object at line 1, column 1"
+                assert.is_true(string.find(err, "unterminated object", 1, true) ~= nil)
             else
                 pending("Could not create malformed test file")
             end

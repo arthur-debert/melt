@@ -242,5 +242,60 @@ user_only = "user_value"
             assert.are.equal(0, #errors)
             assert.is_not_nil(config)
         end)
+
+        it("should NOT search system locations by default if 'config_locations.system' is omitted", function()
+            -- This test relies on the fact that without system=true, no system files should be loaded.
+            -- We'll create a dummy system file and ensure it's NOT loaded.
+
+            local mock_system_dir_path = "./mock_etc_default_test"
+            local mock_system_app_dir = mock_system_dir_path .. "/omitsysapp"
+            if create_temp_dir(mock_system_app_dir) then -- create_temp_dir is a helper in the spec
+                local config_file = mock_system_app_dir .. "/config.toml"
+                local toml_content = [[
+                system_setting_default_test = "from_system_should_not_load"
+                ]]
+
+                if create_temp_file(config_file, toml_content) then -- create_temp_file is a helper
+                    -- To truly test the default, we need to mock the default system paths
+                    -- to point to our mock directory. This is tricky without modifying the main code's
+                    -- hardcoded default paths.
+                    -- A pragmatic approach:
+                    -- 1. Ensure no other config sources provide the setting.
+                    -- 2. Call declare WITHOUT options.config_locations or with options.config_locations.system = nil
+                    -- 3. Assert the setting is nil.
+                    -- This test assumes that if system search WERE active, it *would* look in
+                    -- places like "/etc/omitsysapp/config.toml". We can't easily redirect "/etc" in a test.
+
+                    -- So, we test that by *not* enabling system search, a value that *would*
+                    -- hypothetically be in a default system path is not loaded.
+                    -- This indirectly tests that the search isn't happening.
+
+                    local config1, errors1 = Melt.declare({
+                        app_name = "omitsysapp",
+                        -- config_locations is omitted entirely
+                        defaults = { other_setting = "val" } -- ensure some config exists
+                    })
+                    assert.are.equal(0, #errors1)
+                    assert.is_nil(config1:get("system_setting_default_test"))
+
+                    local config2, errors2 = Melt.declare({
+                        app_name = "omitsysapp",
+                        config_locations = {
+                            -- system is omitted here
+                            user = false, -- disable other sources for clarity
+                            project = false
+                        },
+                        defaults = { other_setting = "val" }
+                    })
+                    assert.are.equal(0, #errors2)
+                    assert.is_nil(config2:get("system_setting_default_test"))
+
+                else
+                    pending("Could not create test system config file for default omission test")
+                end
+            else
+                pending("Could not create test system directory for default omission test")
+            end
+        end)
     end)
 end)

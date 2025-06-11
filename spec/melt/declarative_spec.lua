@@ -81,8 +81,8 @@ describe("Declarative Engine - Phase A", function()
             })
 
             assert.are.equal(1, #errors)
-            assert.are.equal("defaults", errors[1].source)
-            assert.is_true(string.find(errors[1].message, "Could not load defaults file") ~= nil)
+            assert.are.equal("defaults_file_not_found", errors[1].source)
+            assert.is_true(string.find(errors[1].message, "Defaults file not found") ~= nil)
         end)
     end)
 
@@ -176,6 +176,38 @@ describe("Declarative Engine - Phase A", function()
             assert.are.same("table", type(all_config))
             assert.are.equal("testapp", all_config.app_name)
             assert.are.equal("value", all_config.setting)
+        end)
+
+        it("should support array access with dot notation using [index]", function()
+            local defaults = {
+                list = { "item1", "item2", "item3" },
+                nested = {
+                    array = { 10, 20, 30 }
+                },
+                empty_list = {},
+                string_val = "not an array"
+            }
+            local config, _ = Melt.declare({ app_name = "arrayapp", defaults = defaults })
+
+            assert.are.equal("item1", config:get("list[1]"))
+            assert.are.equal("item2", config:get("list[2]"))
+            assert.are.equal("item3", config:get("list[3]"))
+            assert.is_nil(config:get("list[0]")) -- Test 0-based, should be nil for Lua arrays (1-based)
+            assert.is_nil(config:get("list[4]")) -- Out of bounds
+
+            assert.are.equal(10, config:get("nested.array[1]"))
+            assert.are.equal(20, config:get("nested.array[2]"))
+            assert.are.equal(30, config:get("nested.array[3]"))
+            assert.is_nil(config:get("nested.array[0]"))
+            assert.is_nil(config:get("nested.array[4]"))
+
+            -- Non-existent paths or invalid access
+            assert.is_nil(config:get("nonexistent.array[1]")) -- Base 'nonexistent' does not exist
+            assert.is_nil(config:get("list[abc]"))             -- Invalid index format (non-numeric)
+            assert.is_nil(config:get("list[1.2]"))            -- Invalid index format (float)
+            assert.is_nil(config:get("list[-1]"))             -- Invalid index format (negative)
+            assert.is_nil(config:get("empty_list[1]"))        -- Accessing element in an empty list
+            assert.is_nil(config:get("string_val[1]"))        -- Trying array access on a string
         end)
     end)
 end)

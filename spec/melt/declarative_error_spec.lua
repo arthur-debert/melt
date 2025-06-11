@@ -58,8 +58,8 @@ describe("Declarative Engine - Error Handling Tests", function()
             })
 
             assert.are.equal(1, #errors)
-            assert.are.equal("defaults", errors[1].source)
-            assert.is_true(string.find(errors[1].message, "Could not load defaults file") ~= nil)
+            assert.are.equal("defaults_file_not_found", errors[1].source) -- Updated source
+            assert.is_true(string.find(errors[1].message, "Defaults file not found") ~= nil) -- Updated message
             assert.is_not_nil(config) -- Should still return config object
         end)
 
@@ -81,8 +81,8 @@ describe("Declarative Engine - Error Handling Tests", function()
 
             assert.are.equal(2, #errors)
             for _, err in ipairs(errors) do
-                assert.are.equal("custom_path", err.source)
-                assert.is_true(string.find(err.message, "Could not load custom configuration file") ~= nil)
+                assert.are.equal("custom_file_not_found", err.source) -- Updated source
+                assert.is_true(string.find(err.message, "Custom configuration file not found") ~= nil) -- Updated message
                 assert.is_not_nil(err.path)
             end
         end)
@@ -111,11 +111,20 @@ another_key = [1,2,3 # unclosed array
                         cmd_args = false
                     })
 
-                    -- The current implementation returns empty table for malformed files
-                    -- This should ideally generate an error, but currently doesn't
-                    assert.is_not_nil(config)
-                    -- Note: This test documents current behavior
-                    -- In an improved implementation, we'd expect an error here
+                    assert.is_not_nil(config) -- Config object should still be returned
+                    assert.are.equal(1, #errors, "Should have one error for malformed TOML")
+
+                    local err = errors[1]
+                    assert.are.equal("custom_file", err.source, "Error source should be custom_file")
+                    assert.are.equal(malformed_toml, err.path, "Error path should be the malformed file path")
+                    assert.is_true(string.find(err.message, "Failed to parse " .. malformed_toml) ~= nil,
+                                   "Error message should indicate parsing failure and filename")
+                    -- Check for a snippet of a typical TOML parse error message if possible,
+                    -- e.g., "expected '='" or "invalid table header"
+                    -- This depends on the actual error message from the toml parser.
+                    -- For example, if it contains "Expected a key-value pair", we could check:
+                    -- assert.is_true(string.find(err.message, "Expected a key-value pair", 1, true) ~= nil, "Error message detail missing")
+                    -- For now, the generic "Failed to parse" is checked.
                 else
                     pending("Could not create malformed test file")
                 end
@@ -148,9 +157,16 @@ another_key = [1,2,3 # unclosed array
                         cmd_args = false
                     })
 
-                    assert.is_not_nil(config)
-                    -- Current implementation silently ignores malformed files
-                    -- This should ideally report an error
+                    assert.is_not_nil(config) -- Config object should still be returned
+                    assert.are.equal(1, #errors, "Should have one error for malformed JSON")
+
+                    local err = errors[1]
+                    assert.are.equal("custom_file", err.source, "Error source should be custom_file")
+                    assert.are.equal(malformed_json, err.path, "Error path should be the malformed file path")
+                    assert.is_true(string.find(err.message, "Failed to parse " .. malformed_json) ~= nil,
+                                   "Error message should indicate parsing failure and filename")
+                    -- Example check for dkjson error (errors might vary)
+                    -- assert.is_true(string.find(err.message, "expected '}'", 1, true) ~= nil, "Error message detail missing")
                 else
                     pending("Could not create malformed test file")
                 end
@@ -161,7 +177,7 @@ another_key = [1,2,3 # unclosed array
     end)
 
     describe("error message quality", function()
-        it("should provide meaningful error messages with context", function()
+        it("should provide meaningful error messages with context for file not found", function()
             local config, errors = Melt.declare({
                 app_name = "contextapp",
                 defaults = "./missing_with_specific_path.toml",
@@ -176,11 +192,12 @@ another_key = [1,2,3 # unclosed array
 
             assert.are.equal(1, #errors)
             local err = errors[1]
-            assert.are.equal("defaults", err.source)
+            assert.are.equal("defaults_file_not_found", err.source) -- Updated source
+            assert.is_true(string.find(err.message, "Defaults file not found") ~= nil) -- Updated message
             assert.is_true(string.find(err.message, "missing_with_specific_path.toml") ~= nil)
         end)
 
-        it("should include file path in custom path errors", function()
+        it("should include file path in custom path not found errors", function()
             local missing_file = "./very_specific_missing_file.yaml"
 
             local config, errors = Melt.declare({
@@ -197,8 +214,9 @@ another_key = [1,2,3 # unclosed array
 
             assert.are.equal(1, #errors)
             local err = errors[1]
-            assert.are.equal("custom_path", err.source)
+            assert.are.equal("custom_file_not_found", err.source) -- Updated source
             assert.are.equal(missing_file, err.path)
+            assert.is_true(string.find(err.message, "Custom configuration file not found") ~= nil) -- Updated message
             assert.is_true(string.find(err.message, missing_file) ~= nil)
         end)
     end)
@@ -241,24 +259,44 @@ valid_setting = "success"
             end
         end)
 
-        it("should not crash on invalid input types", function()
+        it("should report error for invalid numeric type in options.defaults", function()
             local config, errors = Melt.declare({
-                app_name = "typeapp",
-                defaults = 12345, -- Invalid type (should be table or string)
-                config_locations = {
-                    system = false,
-                    user = false,
-                    project = false
-                },
+                app_name = "typeerrorapp",
+                defaults = 12345, -- Invalid type
+                config_locations = { system = false, user = false, project = false },
                 env = false,
                 cmd_args = false
             })
 
-            -- Should not crash and should return a config object
+            assert.is_not_nil(config) -- Should still return a config object
+            assert.are.equal(1, #errors)
+            if #errors > 0 then
+                local err = errors[1]
+                assert.are.equal("options_validation", err.source)
+                assert.are.equal("defaults", err.key)
+                assert.is_true(string.find(err.message, "Invalid type for 'defaults'.", 1, true) ~= nil)
+                assert.is_true(string.find(err.message, "Expected table or string path, got number.", 1, true) ~= nil)
+            end
+        end)
+
+        it("should report error for boolean type in options.defaults", function()
+            local config, errors = Melt.declare({
+                app_name = "typeerrorappbool",
+                defaults = true, -- Invalid type
+                config_locations = { system = false, user = false, project = false },
+                env = false,
+                cmd_args = false
+            })
+
             assert.is_not_nil(config)
-            assert.is_not_nil(errors)
-            -- Current implementation may or may not report this as an error
-            -- But it should at least not crash
+            assert.are.equal(1, #errors)
+            if #errors > 0 then
+                local err = errors[1]
+                assert.are.equal("options_validation", err.source)
+                assert.are.equal("defaults", err.key)
+                assert.is_true(string.find(err.message, "Invalid type for 'defaults'.", 1, true) ~= nil)
+                assert.is_true(string.find(err.message, "Expected table or string path, got boolean.", 1, true) ~= nil)
+            end
         end)
     end)
 
@@ -339,8 +377,8 @@ valid_setting = "success"
                 table.insert(error_sources, err.source)
             end
 
-            assert.is_true(table.concat(error_sources, ","):find("defaults") ~= nil)
-            assert.is_true(table.concat(error_sources, ","):find("custom_path") ~= nil)
+            assert.is_true(table.concat(error_sources, ","):find("defaults_file_not_found") ~= nil)
+            assert.is_true(table.concat(error_sources, ","):find("custom_file_not_found") ~= nil)
         end)
     end)
 end)

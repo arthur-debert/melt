@@ -13,12 +13,14 @@ describe("CONFIG Reader", function()
       assert.are.equal(72.0, data.database_temp_targets_case)
     end)
 
-    it("should return an empty table for a non-existent CONFIG file", function()
-      local data = config_reader.read_config_file("spec/melt/non_existent.config")
-      assert.are.same({}, data)
+    it("should return nil and an error message for a non-existent CONFIG file", function()
+      local data, err = config_reader.read_config_file("spec/melt/non_existent.config")
+      assert.is_nil(data)
+      assert.is_string(err)
+      assert.is_true(string.find(err, "cannot open") ~= nil or string.find(err, "No such file or directory") ~= nil)
     end)
 
-    it("should return an empty table for a malformed CONFIG file", function()
+    it("should return nil and an error message for a malformed CONFIG file", function()
       -- Setup: Create a temporary malformed CONFIG file
       local malformed_config_path = "spec/melt/readers/malformed.config"
       local file = io.open(malformed_config_path, "w")
@@ -27,8 +29,10 @@ describe("CONFIG Reader", function()
         file:close()
       end
 
-      local data = config_reader.read_config_file(malformed_config_path)
-      assert.are.same({}, data)
+      local data, err = config_reader.read_config_file(malformed_config_path)
+      assert.is_nil(data)
+      assert.is_string(err)
+      assert.is_true(string.find(err, "attempt to index local 'key' (a nil value)", 1, true) ~= nil)
 
       -- Teardown: Remove the temporary file
       os.remove(malformed_config_path)

@@ -68,6 +68,7 @@ Provides the most basic default values for your application. This layer has the 
     ```lua
     defaults = "/usr/share/myapp/default_config.json"
     ```
+    If a value is provided for `defaults` but it is not a Lua table or a string path, an error will be reported in the `errors` table returned by `melt.declare()`.
 
 ### 3. `config_locations` (table, optional)
 
