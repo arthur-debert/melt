@@ -1,0 +1,10 @@
+#! /usr/bin/env bash
+LUAROCK_NAME=".luarocks"
+LUAROCK_DIR="${PROJECT_ROOT}/${LUAROCK_NAME}"
+
+if [[ -d ${LUAROCK_DIR} ]]; then
+    rm -rf "${LUAROCK_DIR}"
+fi
+
+SCRIPTS_DIR="${PROJECT_ROOT}/bin"
+"${SCRIPTS_DIR}"/setup_env.sh "${SCRIPTS_DIR}"/get-latest-spec

@@ -37,5 +37,6 @@ fi
 
 ## Good, now we should have base lua install with luarocks and busted installed.
 echo "Installing project dependencies..."
-luarocks make "${SPEC_PATH}" --tree .luarocks
+#luarocks make "${SPEC_PATH}" --tree .luarocks
+luarocks install "${SPEC_PATH}" --tree .luarocks
 luarocks test --tree .luarocks
