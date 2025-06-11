@@ -177,8 +177,10 @@ feature_c = true
             assert.is_not_nil(config)
             -- Should have exactly 1 error for the missing file
             assert.are.equal(1, #errors)
-            assert.are.equal("custom_path", errors[1].source)
-            assert.is_true(string.find(errors[1].message, "Could not load custom configuration file") ~= nil)
+            assert.are.equal("custom_file_not_found", errors[1].source)
+            assert.is_true(string.find(errors[1].message, "Custom configuration file not found") ~= nil)
+            -- Also check path if available
+            if errors[1] then assert.are.equal("missing_file.toml", errors[1].path) end
         end)
 
         it("should handle malformed configuration files gracefully", function()

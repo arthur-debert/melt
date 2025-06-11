@@ -42,19 +42,28 @@ function Config:add_file(filepath, type_hint)
     end
   end
   -- Read file based on type
+  local actual_data, parse_error_msg
   if file_type == "json" then
-    data_to_merge = readers.read_json_file(filepath)
+    actual_data, parse_error_msg = readers.read_json_file(filepath)
   elseif file_type == "yaml" or file_type == "yml" then
-    data_to_merge = readers.read_yaml_file(filepath)
+    actual_data, parse_error_msg = readers.read_yaml_file(filepath)
   elseif file_type == "ini" then
-    data_to_merge = readers.read_ini_file(filepath)
+    actual_data, parse_error_msg = readers.read_ini_file(filepath)
   elseif file_type == "config" then
-    data_to_merge = readers.read_config_file(filepath)
+    actual_data, parse_error_msg = readers.read_config_file(filepath)
   else
-    -- Default to TOML for backward compatibility
-    data_to_merge = readers.read_toml_file(filepath)
+    -- Default to TOML
+    actual_data, parse_error_msg = readers.read_toml_file(filepath)
   end
-  self.data = utils.deep_merge(self.data, data_to_merge)
+
+  if parse_error_msg then
+    -- Optional: print warning, or allow API user to get last error
+    print("Warning: Failed to load file " .. filepath .. ": " .. parse_error_msg)
+  elseif actual_data then
+    self.data = utils.deep_merge(self.data, actual_data)
+  end
+  -- If actual_data is nil and no error, it means an empty file was parsed (e.g. empty YAML/JSON)
+  -- In this case, we do nothing, which is fine.
   return self
 end
 

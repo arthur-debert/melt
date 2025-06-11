@@ -8,31 +8,30 @@ local toml_reader = {}
 -- @return A Lua table with the TOML content, or an empty table on error.
 function toml_reader.read_toml_file(filepath)
   if not toml_status then
-    print("Warning: toml-lua library not found. TOML files cannot be processed.")
-    return {}
+    return nil, "toml-lua library not found"
   end
 
   local file, err_open = io.open(filepath, "r")
   if not file then
-    print("Warning: Could not open file " .. filepath .. ": " .. (err_open or "unknown error"))
-    return {}
+    return nil, "Could not open file " .. filepath .. ": " .. (err_open or "unknown error")
   end
 
   local content, err_read = file:read("*a")
   file:close()
 
   if not content then
-    print("Warning: Could not read file " .. filepath .. ": " .. (err_read or "unknown error"))
-    return {}
+    return nil, "Could not read file " .. filepath .. ": " .. (err_read or "unknown error")
   end
 
-  local ok, data = pcall(toml.parse, content)
-  if not ok then
-    print("Error: Failed to parse TOML file " .. filepath .. ": " .. tostring(data))
-    return {}
+  local success, result = pcall(toml.parse, content) -- toml.parse can return (false, error_message)
+  if not success then
+    -- pcall itself failed or toml.parse indicated failure.
+    -- result is the error message from toml.parse or from pcall.
+    return nil, tostring(result)
   end
-
-  return data
+  -- Check if toml.parse returned data or if it implicitly returned nil on success (should not happen for toml.parse)
+  -- Assuming toml.parse returns data on success. If it can return (true, nil) for valid empty toml, this is fine.
+  return result, nil
 end
 
 return toml_reader

@@ -478,4 +478,92 @@ from_standard_name = true
             assert.is_nil(config:get("output.format"))
         end)
     end)
+
+    describe("format precedence", function()
+        local temp_files_format = {}
+        local temp_dirs_format = {}
+
+        local function create_temp_file_fp(path, content) -- local helper
+            local file = io.open(path, "w")
+            if file then file:write(content); file:close(); table.insert(temp_files_format, path); return true end
+            return false
+        end
+        local function create_temp_dir_fp(path) -- local helper
+            -- Use os.execute to create directory, check for success if necessary
+            -- For simplicity in test setup, direct os.execute is used.
+            os.execute("mkdir -p " .. path)
+            table.insert(temp_dirs_format, path)
+        end
+
+        after_each(function()
+            for _, filepath in ipairs(temp_files_format) do os.remove(filepath) end; temp_files_format = {}
+            -- Ensure directories are removed recursively and silently
+            for _, dirpath in ipairs(temp_dirs_format) do os.execute("rm -rf " .. dirpath) end; temp_dirs_format = {}
+        end)
+
+        it("should load .toml before .json if specified in formats", function()
+            local test_dir = "./temp_format_test_dir"
+            create_temp_dir_fp(test_dir)
+
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.toml", "setting = 'from_toml'"), "Failed to create TOML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.json", "{ \"setting\": \"from_json\" }"), "Failed to create JSON file")
+
+            local config, errors = Melt.declare({
+                app_name = "formatprecedence",
+                config_locations = {
+                    project = { test_dir }, -- Search in our test directory
+                    system = false, user = false,
+                    file_names = { "myconfig" } -- Base name to look for
+                },
+                formats = { "toml", "json" } -- TOML first
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("from_toml", config:get("setting"))
+        end)
+
+        it("should load .json before .toml if specified in formats", function()
+            local test_dir = "./temp_format_test_dir2"
+            create_temp_dir_fp(test_dir)
+
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.toml", "setting = 'from_toml'"), "Failed to create TOML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.json", "{ \"setting\": \"from_json\" }"), "Failed to create JSON file")
+
+            local config, errors = Melt.declare({
+                app_name = "formatprecedence2",
+                config_locations = {
+                    project = { test_dir },
+                    system = false, user = false,
+                    file_names = { "myconfig" }
+                },
+                formats = { "json", "toml" } -- JSON first
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("from_json", config:get("setting"))
+        end)
+
+        it("should load only specified formats, ignoring others with same base name", function()
+            local test_dir = "./temp_format_test_dir3"
+            create_temp_dir_fp(test_dir)
+
+            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.toml", "setting = 'from_toml'"), "Failed to create TOML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.yaml", "setting: from_yaml"), "Failed to create YAML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.json", "{ \"setting\": \"from_json\" }"), "Failed to create JSON file")
+
+
+            local config, errors = Melt.declare({
+                app_name = "formatprecedence3",
+                config_locations = {
+                    project = { test_dir },
+                    system = false, user = false,
+                    file_names = { "appsettings" }
+                },
+                formats = { "yaml", "json" } -- Only yaml and json, toml should be ignored
+            })
+
+            assert.are.equal(0, #errors)
+            assert.are.equal("from_yaml", config:get("setting")) -- YAML is first in formats
+        end)
+    end)
 end)

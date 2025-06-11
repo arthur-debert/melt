@@ -77,49 +77,58 @@ end
 local function dir_exists(path)
     if not path then return false end
 
-    -- Try to open as a directory
-    local status = os.execute("cd " .. path .. " 2>/dev/null")
-    return status == 0 or status == true
+    -- Use test -d for POSIX-like systems
+    -- The command returns 0 if the directory exists, and a non-zero value otherwise.
+    local command = "test -d '" .. path .. "'"
+    local status = os.execute(command)
+    return status == 0 or status == true -- os.execute might return true on some systems for success
 end
 
 -- Helper function to try loading a file with different extensions
-local function try_load_config_file(base_path, formats, errors)
+local function try_load_config_file(base_path, formats, errors, source_type_for_error)
     formats = formats or { "toml", "json", "yaml", "ini", "config" }
-    errors = errors or {}
+    errors = errors or {} -- Ensure errors table is always present
+    source_type_for_error = source_type_for_error or "unknown_file_source"
 
     for _, format in ipairs(formats) do
         local filepath = base_path .. "." .. format
         if file_exists(filepath) then
-            local data_to_merge
-            local success = true
+            local data_to_merge, parse_error_msg
 
             if format == "json" then
-                data_to_merge = readers.read_json_file(filepath)
+                data_to_merge, parse_error_msg = readers.read_json_file(filepath)
             elseif format == "yaml" or format == "yml" then
-                data_to_merge = readers.read_yaml_file(filepath)
+                data_to_merge, parse_error_msg = readers.read_yaml_file(filepath)
             elseif format == "ini" then
-                data_to_merge = readers.read_ini_file(filepath)
+                data_to_merge, parse_error_msg = readers.read_ini_file(filepath)
             elseif format == "config" then
-                data_to_merge = readers.read_config_file(filepath)
-            else
-                -- Default to TOML
-                data_to_merge = readers.read_toml_file(filepath)
+                data_to_merge, parse_error_msg = readers.read_config_file(filepath)
+            else -- Default to TOML (or any other format if "toml" is explicitly in formats)
+                data_to_merge, parse_error_msg = readers.read_toml_file(filepath)
             end
 
-            -- Check if data loading failed (empty table might indicate parsing error)
-            if data_to_merge and next(data_to_merge) == nil then
-                -- File exists but returned empty table - could be parse error or truly empty file
-                -- We'll accept this as valid (empty config is valid)
+            if parse_error_msg then
+                table.insert(errors, {
+                    message = "Failed to parse " .. filepath .. ": " .. parse_error_msg,
+                    source  = source_type_for_error,
+                    path    = filepath
+                })
+                data_to_merge = nil -- Ensure no data is merged on parse error
             end
 
+            -- If data_to_merge is not nil here, it means it's valid (even if empty)
+            -- If it's nil, it means either a parse error occurred (handled above)
+            -- or the file was empty and parsed to nil (e.g. empty YAML) which is fine.
+            -- The function should return the data (or nil) and the path.
+            -- If a file was found and processed (even if it resulted in an error or nil data), return its path.
             return data_to_merge, filepath
         end
     end
-    return nil, nil
+    return nil, nil -- No file found with any of the extensions
 end
 
 -- Helper function to look for configuration files in a directory
-local function try_load_config_from_dir(dir_path, file_names, formats, app_name, use_app_name_as_dir, errors)
+local function try_load_config_from_dir(dir_path, file_names, formats, app_name, use_app_name_as_dir, errors, source_type_for_error)
     if not dir_exists(dir_path) then
         return nil, nil
     end
@@ -130,16 +139,24 @@ local function try_load_config_from_dir(dir_path, file_names, formats, app_name,
 
     -- Normalize file_names if not provided
     file_names = file_names or { "config", app_name }
+    source_type_for_error = source_type_for_error or "unknown_dir_source" -- Default for safety
 
     -- First try with app_name as subdirectory if requested
     if use_app_name_as_dir and app_name then
         local app_dir = dir_path .. "/" .. app_name
         if dir_exists(app_dir) then
             for _, name in ipairs(file_names) do
-                local data, path = try_load_config_file(app_dir .. "/" .. name, formats, errors)
-                if data then
+                -- Pass source_type_for_error to try_load_config_file
+                local data, path = try_load_config_file(app_dir .. "/" .. name, formats, errors, source_type_for_error)
+                if data then -- Data is not nil, implies successful load or valid empty file
                     loaded_data = data
                     loaded_path = path
+                    break
+                elseif path then -- File was found and processed, but data is nil (due to parse error, already logged)
+                    -- Potentially break or continue, current logic is to break on first file *processed*
+                    -- To keep original behavior of breaking on first *attempted* file:
+                    -- if path is not nil (meaning file existed and was attempted), break.
+                    -- For now, let's break if a file was processed, error or not.
                     break
                 end
             end
@@ -149,56 +166,88 @@ local function try_load_config_from_dir(dir_path, file_names, formats, app_name,
     -- If nothing found and not using app_name as dir or fallback to direct search
     if not loaded_data then
         for _, name in ipairs(file_names) do
-            local data, path = try_load_config_file(dir_path .. "/" .. name, formats, errors)
+            -- Pass source_type_for_error to try_load_config_file
+            local data, path = try_load_config_file(dir_path .. "/" .. name, formats, errors, source_type_for_error)
             if data then
                 loaded_data = data
                 loaded_path = path
                 break
+            elseif path then -- File was found and processed, but data is nil (parse error)
+                break -- Break if file was processed, error or not
             end
         end
 
-        -- If still not found, check all files in the directory with supported extensions
+        -- If still not found by specific file_names, scan directory (fallback)
         if not loaded_data then
-            local command = "ls -1 " .. dir_path .. "/*.*"
+            local command = "ls -A -- '" .. dir_path .. "'"
             local handle = io.popen(command)
+
             if handle then
-                local result = handle:read("*a")
-                handle:close()
+                for filename in handle:lines() do
+                    if filename ~= "." and filename ~= ".." then
+                        local filepath = dir_path .. "/" .. filename
+                        if file_exists(filepath) then
+                            local extension = filename:match("%.([^%.]+)$")
+                            if extension then
+                                local format_supported = false
+                                for _, fmt in ipairs(formats) do
+                                    if extension == fmt or (fmt == "yaml" and extension == "yml") or (fmt == "yml" and extension == "yaml") then
+                                        format_supported = true
+                                        break
+                                    end
+                                end
 
-                for filepath in result:gmatch("[^\r\n]+") do
-                    local extension = filepath:match("%.([^%.]+)$")
-                    if extension then
-                        -- Check if extension is in the formats list
-                        local format_supported = false
-                        for _, fmt in ipairs(formats) do
-                            if extension == fmt then
-                                format_supported = true
-                                break
-                            end
-                        end
+                                if format_supported then
+                                    local data, parse_error_msg
+                                    if extension == "json" then
+                                        data, parse_error_msg = readers.read_json_file(filepath)
+                                    elseif extension == "yaml" or extension == "yml" then
+                                        data, parse_error_msg = readers.read_yaml_file(filepath)
+                                    elseif extension == "ini" then
+                                        data, parse_error_msg = readers.read_ini_file(filepath)
+                                    elseif extension == "config" then
+                                        data, parse_error_msg = readers.read_config_file(filepath)
+                                    elseif extension == "toml" then
+                                        data, parse_error_msg = readers.read_toml_file(filepath)
+                                    end
 
-                        if format_supported then
-                            local data = nil
-                            if extension == "json" then
-                                data = readers.read_json_file(filepath)
-                            elseif extension == "yaml" or extension == "yml" then
-                                data = readers.read_yaml_file(filepath)
-                            elseif extension == "ini" then
-                                data = readers.read_ini_file(filepath)
-                            elseif extension == "config" then
-                                data = readers.read_config_file(filepath)
-                            elseif extension == "toml" then
-                                data = readers.read_toml_file(filepath)
-                            end
+                                    if parse_error_msg then
+                                        table.insert(errors, {
+                                            message = "Failed to parse " .. filepath .. ": " .. parse_error_msg,
+                                            source  = source_type_for_error, -- Use the one from dir context
+                                            path    = filepath
+                                        })
+                                        data = nil -- Ensure data is nil if error occurred
+                                    end
 
-                            if data then
-                                loaded_data = data
-                                loaded_path = filepath
-                                break
+                                    if data then -- Successfully parsed and data is not nil
+                                        loaded_data = data
+                                        loaded_path = filepath
+                                        break -- Found a loadable file, break from filename loop
+                                    elseif parse_error_msg then
+                                        -- A file of a supported type was found, but it failed to parse.
+                                        -- As per original logic, we break on the first file processed.
+                                        loaded_path = filepath -- Mark that we processed this path
+                                        break
+                                    end
+                                    -- If data is nil and no parse_error_msg, it means reader returned (nil,nil)
+                                    -- e.g. empty YAML/JSON. Treat as "not loaded" and continue search.
+                                end
                             end
                         end
                     end
+                    if loaded_data or loaded_path then -- Break outer loop if we've settled on a file (or a parse error for a file)
+                        break
+                    end
                 end
+                handle:close()
+            else
+                -- Error listing directory
+                table.insert(errors, {
+                    message = "Failed to list directory content: " .. dir_path,
+                    source = source_type_for_error, -- Or a more specific source like "directory_scan_error"
+                    path = dir_path
+                })
             end
         end
     end
@@ -267,22 +316,35 @@ local function declare(options, env_provider, arg_provider)
             config.data = utils.deep_merge(config.data, options.defaults)
         elseif type(options.defaults) == "string" then
             -- Load defaults from file path
-            local data, filepath = try_load_config_file(options.defaults:gsub("%.%w+$", ""), formats, errors)
+            local base_defaults_path = options.defaults:gsub("%.%w+$", "") -- Remove extension if any
+            local data, filepath = try_load_config_file(base_defaults_path, formats, errors, "defaults_file")
             if data then
                 config.data = utils.deep_merge(config.data, data)
-            else
+            elseif not filepath then -- Only add "Could not load" if file wasn't found by try_load_config_file
                 table.insert(errors, {
-                    message = "Could not load defaults file: " .. options.defaults,
-                    source = "defaults"
+                    message = "Defaults file not found: " .. options.defaults,
+                    source = "defaults_file_not_found", -- Differentiate from parse error
+                    path = options.defaults
                 })
             end
+        else
+            -- options.defaults is present but not a table or string
+            table.insert(errors, {
+                message = "Invalid type for 'defaults'. Expected table or string path, got " .. type(options.defaults) .. ".",
+                source  = "options_validation",
+                key     = "defaults"
+            })
         end
     end
 
     -- 2. Load system-wide configuration
+    local system_spec = config_locations.system
+    if system_spec == nil then
+        system_spec = false -- Treat nil as false to adhere to "default: false"
+    end
     local system_locations = process_location_spec(
-        config_locations.system,
-        { "/etc/" .. options.app_name, "/etc" }
+        system_spec,
+        { "/etc/" .. options.app_name, "/etc" } -- Default paths if system_spec resolves to true
     )
 
     for _, location in ipairs(system_locations) do
@@ -292,7 +354,8 @@ local function declare(options, env_provider, arg_provider)
             formats,
             options.app_name,
             use_app_name_as_dir,
-            errors
+            errors,
+            "system_file" -- source_type_for_error
         )
 
         if data then
@@ -318,7 +381,8 @@ local function declare(options, env_provider, arg_provider)
                 formats,
                 options.app_name,
                 use_app_name_as_dir,
-                errors
+                errors,
+                "user_file" -- source_type_for_error
             )
 
             if data then
@@ -328,10 +392,13 @@ local function declare(options, env_provider, arg_provider)
 
         -- Also check for dotfile in home directory (e.g., ~/.appname.toml)
         local user_dotfile = home .. "/." .. options.app_name
-        local user_data, user_filepath = try_load_config_file(user_dotfile, formats, errors)
+        -- Source type could be "user_dot_file" for more specificity
+        local user_data, user_filepath = try_load_config_file(user_dotfile, formats, errors, "user_file")
         if user_data then
             config.data = utils.deep_merge(config.data, user_data)
         end
+        -- If user_data is nil due to parse error, it's already logged by try_load_config_file.
+        -- No specific "file not found" for dotfile, as it's optional.
     end
 
     -- 4. Load project-specific configuration
@@ -347,7 +414,8 @@ local function declare(options, env_provider, arg_provider)
             formats,
             options.app_name,
             use_app_name_as_dir,
-            errors
+            errors,
+            "project_file" -- source_type_for_error
         )
 
         if data then
@@ -366,7 +434,8 @@ local function declare(options, env_provider, arg_provider)
                     formats,
                     options.app_name,
                     use_app_name_as_dir,
-                    errors
+                    errors,
+                    "custom_dir_file" -- source_type_for_error
                 )
 
                 if data then
@@ -375,17 +444,19 @@ local function declare(options, env_provider, arg_provider)
             else
                 -- Treat as a file path, strip extension if present
                 local base_path = path:gsub("%.%w+$", "")
-                local data, loaded_path = try_load_config_file(base_path, formats, errors)
+                local data, loaded_filepath = try_load_config_file(base_path, formats, errors, "custom_file")
 
                 if data then
                     config.data = utils.deep_merge(config.data, data)
-                else
+                elseif not loaded_filepath then -- File not found by try_load_config_file
                     table.insert(errors, {
-                        message = "Could not load custom configuration file: " .. path,
-                        source = "custom_path",
+                        message = "Custom configuration file not found: " .. path,
+                        source = "custom_file_not_found", -- Differentiate from parse error
                         path = path
                     })
                 end
+                -- If loaded_filepath is not nil but data is nil, it means a parse error occurred
+                -- and it was already logged by try_load_config_file.
             end
         end
     end

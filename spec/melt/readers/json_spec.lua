@@ -10,12 +10,14 @@ describe("JSON Reader", function()
       assert.are.same({ cpu = 79.5, case = 72.0 }, data.database.temp_targets)
     end)
 
-    it("should return an empty table for a non-existent JSON file", function()
-      local data = json_reader.read_json_file("spec/melt/non_existent.json")
-      assert.are.same({}, data)
+    it("should return nil and an error message for a non-existent JSON file", function()
+      local data, err = json_reader.read_json_file("spec/melt/non_existent.json")
+      assert.is_nil(data)
+      assert.is_string(err)
+      assert.is_true(string.find(err, "Could not open file") ~= nil)
     end)
-    
-    it("should return an empty table for a malformed JSON file", function()
+
+    it("should return nil and an error message for a malformed JSON file", function()
       -- Setup: Create a temporary malformed JSON file
       local malformed_json_path = "spec/melt/readers/malformed.json"
       local file = io.open(malformed_json_path, "w")
@@ -24,8 +26,14 @@ describe("JSON Reader", function()
         file:close()
       end
 
-      local data = json_reader.read_json_file(malformed_json_path)
-      assert.are.same({}, data)
+      local data, err = json_reader.read_json_file(malformed_json_path)
+      assert.is_nil(data)
+      assert.is_string(err)
+      assert.is_true(string.find(err, "Failed to parse JSON", 1, true) ~= nil or
+                     string.find(err, "lexical error", 1, true) ~= nil or
+                     string.find(err, "unexpected symbol", 1, true) ~= nil or
+                     string.find(err, "expected value", 1, true) ~= nil or
+                     string.find(err, "unterminated object", 1, true) ~= nil)
 
       -- Teardown: Remove the temporary file
       os.remove(malformed_json_path)
