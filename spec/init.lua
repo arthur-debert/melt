@@ -1,10 +1,13 @@
 -- This file is loaded by busted before running tests (as configured in .busted)
 -- It makes busted functions available globally for all spec files
+local lual = require("lual")
+local logger = lual.logger()
+logger.set_level(lual.debug)
 
--- Print type of assert for debugging (optional, can be removed)
--- print("spec/init.lua: Initial type of assert: " .. type(_G.assert))
+-- logger.info type of assert for debugging (optional, can be removed)
+-- logger.info("spec/init.lua: Initial type of assert: " .. type(_G.assert))
 -- if type(_G.assert) == "table" then
---   print("spec/init.lua: assert.same is initially: " .. tostring(_G.assert.same))
+--   logger.info("spec/init.lua: assert.same is initially: " .. tostring(_G.assert.same))
 -- end
 
 -- Define globals provided by busted that luacheck might complain about
@@ -26,18 +29,18 @@ if _G.assert then
     if _G.assert.equal then
       _G.assert.are.equal = _G.assert.equal
     else
-      print("Warning (spec/init.lua): _G.assert.equal is nil. Cannot create alias assert.are.equal.")
+      logger.warn("Warning (spec/init.lua): _G.assert.equal is nil. Cannot create alias assert.are.equal.")
     end
     if _G.assert.same then
       _G.assert.are.same = _G.assert.same
     else
-      print("Warning (spec/init.lua): _G.assert.same is nil. Cannot create alias assert.are.same.")
+      logger.warn("Warning (spec/init.lua): _G.assert.same is nil. Cannot create alias assert.are.same.")
     end
   else
-    print("Warning (spec/init.lua): _G.assert is not a table. Busted's assertions might not be loaded correctly.")
+    logger.warn("Warning (spec/init.lua): _G.assert is not a table. Busted's assertions might not be loaded correctly.")
   end
 else
-  print("Warning (spec/init.lua): _G.assert is nil. Busted's assertions are not available.")
+  logger.warn("Warning (spec/init.lua): _G.assert is nil. Busted's assertions are not available.")
 end
 
 -- Suppress luacheck warnings

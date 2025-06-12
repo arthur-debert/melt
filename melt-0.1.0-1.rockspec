@@ -15,7 +15,7 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "penlight >= 1.14.0",
-   "lual >= 1.0.7",
+   "lual >= 1.0.11",
    "string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
    "lua-toml >= 2.0-1",  -- The module name is 'toml' despite package name being 'lua-toml'
    "dkjson >= 2.5",  -- For JSON file support
@@ -31,7 +31,8 @@ build = {
       ["lua.melt"] = "lua/melt/init.lua",
       ["lua.melt.utils"] = "lua/melt/utils.lua",
       ["lua.melt.readers"] = "lua/melt/readers.lua",
-      ["lua.melt.declarative"] = "lua/melt/declarative.lua"
+      ["lua.melt.declarative"] = "lua/melt/declarative.lua",
+      ["lua.melt.logging"] = "lua/melt/logging.lua"
    },
    copy_directories = {"docs"}
 }

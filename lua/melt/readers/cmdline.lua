@@ -1,4 +1,5 @@
 -- Command-line options reader for lua.melt
+local logger = require("lual").logger()
 
 local cmdline_reader = {}
 
@@ -55,8 +56,8 @@ end
 function cmdline_reader.read_options(options_table)
   local result = {}
   if type(options_table) ~= "table" then
-    -- Optionally print a warning or error
-    print("Warning: read_options expects a table as input.")
+    -- Optionally logger.info a warning or error
+    logger.info("Warning: read_options expects a table as input.")
     return result
   end
 

@@ -1,6 +1,7 @@
 -- Environment variable reader for lua.melt
 
 local env_reader = {}
+local logger = require("lual").logger()
 
 -- Helper function to set a value in a nested table based on a path string
 local function set_nested_value(tbl, path_str, value)
@@ -52,7 +53,7 @@ end
 function env_reader.read_env_vars(prefix, auto_parse_types, nested_separator, env_provider)
   local result = {}
   if type(prefix) ~= "string" or prefix == "" then
-    print("Warning: read_env_vars requires a non-empty string prefix.")
+    logger.info("Warning: read_env_vars requires a non-empty string prefix.")
     return result
   end
 
@@ -111,11 +112,11 @@ function env_reader.read_env_vars(prefix, auto_parse_types, nested_separator, en
   end
 
   -- 4. We can't enumerate all environment variables in standard Lua
-  -- but we print a warning only if no environment provider was given
+  -- but we logger.info a warning only if no environment provider was given
   if env_provider == nil then
-    print("Warning: Cannot directly access the full environment variable table.")
-    print("This reader might not find all prefixed variables.")
-    print("Consider pre-defining expected environment variable names if issues persist.")
+    logger.info("Warning: Cannot directly access the full environment variable table.")
+    logger.info("This reader might not find all prefixed variables.")
+    logger.info("Consider pre-defining expected environment variable names if issues persist.")
   end
 
   return result

@@ -4,6 +4,7 @@
 
 local Melt = require("lua.melt")
 local readers = require("lua.melt.readers")
+local logger = require("lual").logger()
 
 describe("Declarative Engine - Integration Tests", function()
     local temp_files = {}
@@ -135,17 +136,17 @@ host = "user-override-host"
                     defaults = defaults
                 })
 
-                print("Errors:", #errors)
+                logger.error("Errors:", #errors)
                 for i, err in ipairs(errors) do
-                    print("Error " .. i .. ":", err.message, err.source)
+                    logger.error("Error " .. i .. ":", err.message, err.source)
                 end
 
-                print("only_in_user value:", config:get("only_in_user"))
-                print("Config data:")
+                logger.error("only_in_user value:", config:get("only_in_user"))
+                logger.error("Config data:")
                 local config_table = config:get_table()
                 if config_table then
                     for k, v in pairs(config_table) do
-                        print("  " .. k .. ":", v)
+                        logger.info("  " .. k .. ":", v)
                     end
                 end
 
@@ -485,7 +486,9 @@ from_standard_name = true
 
         local function create_temp_file_fp(path, content) -- local helper
             local file = io.open(path, "w")
-            if file then file:write(content); file:close(); table.insert(temp_files_format, path); return true end
+            if file then
+                file:write(content); file:close(); table.insert(temp_files_format, path); return true
+            end
             return false
         end
         local function create_temp_dir_fp(path) -- local helper
@@ -505,17 +508,20 @@ from_standard_name = true
             local test_dir = "./temp_format_test_dir"
             create_temp_dir_fp(test_dir)
 
-            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.toml", "setting = 'from_toml'"), "Failed to create TOML file")
-            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.json", "{ \"setting\": \"from_json\" }"), "Failed to create JSON file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.toml", "setting = 'from_toml'"),
+                "Failed to create TOML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.json", "{ \"setting\": \"from_json\" }"),
+                "Failed to create JSON file")
 
             local config, errors = Melt.declare({
                 app_name = "formatprecedence",
                 config_locations = {
-                    project = { test_dir }, -- Search in our test directory
-                    system = false, user = false,
+                    project = { test_dir },     -- Search in our test directory
+                    system = false,
+                    user = false,
                     file_names = { "myconfig" } -- Base name to look for
                 },
-                formats = { "toml", "json" } -- TOML first
+                formats = { "toml", "json" }    -- TOML first
             })
 
             assert.are.equal(0, #errors)
@@ -526,14 +532,17 @@ from_standard_name = true
             local test_dir = "./temp_format_test_dir2"
             create_temp_dir_fp(test_dir)
 
-            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.toml", "setting = 'from_toml'"), "Failed to create TOML file")
-            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.json", "{ \"setting\": \"from_json\" }"), "Failed to create JSON file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.toml", "setting = 'from_toml'"),
+                "Failed to create TOML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/myconfig.json", "{ \"setting\": \"from_json\" }"),
+                "Failed to create JSON file")
 
             local config, errors = Melt.declare({
                 app_name = "formatprecedence2",
                 config_locations = {
                     project = { test_dir },
-                    system = false, user = false,
+                    system = false,
+                    user = false,
                     file_names = { "myconfig" }
                 },
                 formats = { "json", "toml" } -- JSON first
@@ -547,16 +556,20 @@ from_standard_name = true
             local test_dir = "./temp_format_test_dir3"
             create_temp_dir_fp(test_dir)
 
-            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.toml", "setting = 'from_toml'"), "Failed to create TOML file")
-            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.yaml", "setting: from_yaml"), "Failed to create YAML file")
-            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.json", "{ \"setting\": \"from_json\" }"), "Failed to create JSON file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.toml", "setting = 'from_toml'"),
+                "Failed to create TOML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.yaml", "setting: from_yaml"),
+                "Failed to create YAML file")
+            assert.is_true(create_temp_file_fp(test_dir .. "/appsettings.json", "{ \"setting\": \"from_json\" }"),
+                "Failed to create JSON file")
 
 
             local config, errors = Melt.declare({
                 app_name = "formatprecedence3",
                 config_locations = {
                     project = { test_dir },
-                    system = false, user = false,
+                    system = false,
+                    user = false,
                     file_names = { "appsettings" }
                 },
                 formats = { "yaml", "json" } -- Only yaml and json, toml should be ignored
