@@ -2,7 +2,7 @@ rockspec_format = "3.0"
 package = "melt"
 version = "0.1.0-1"
 source = {
-	url = "https://github.com/arthur-debert/lua.melt",
+	url = "https://github.com/arthur-debert/melt",
 }
 description = {
 	summary = "A Lua library for hierarchical configuration management.",
