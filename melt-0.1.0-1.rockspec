@@ -9,7 +9,7 @@ description = {
 	detailed = [[
       lua-melt allows for merging configurations from multiple sources (defaults, files, environment variables) with a defined precedence. It supports Lua tables, TOML files, and environment variables out of the box, with an extensible design for adding more formats.
    ]],
-	homepage = "https://github.com/arthur-debert/melt.lua",
+	homepage = "https://github.com/arthur-debert/melt",
 	license = "MIT",
 }
 dependencies = {
