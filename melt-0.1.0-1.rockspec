@@ -27,14 +27,11 @@ test_dependencies = {
 }
 build = {
    type = "builtin",
-   modules = {
-      ["lua.melt"] = "lua/melt/init.lua",
-      ["lua.melt.utils"] = "lua/melt/utils.lua",
-      ["lua.melt.readers"] = "lua/melt/readers.lua",
-      ["lua.melt.declarative"] = "lua/melt/declarative.lua",
-      ["lua.melt.logging"] = "lua/melt/logging.lua"
+   install = {
+      lua = {
+         ["melt"]  = "lua/melt"
+       }
    },
-   copy_directories = {"docs"}
 }
 test = {
    type = "busted"

@@ -1,5 +1,6 @@
 # lua.melt
 
+Very WIP, use and shout if you find issues. 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A Lua library for hierarchical configuration management that elegantly merges
@@ -11,11 +12,10 @@ work too, and lest we forget: command line options.
 
 Even simple apps have a legitimate need for configuration at various points.
 lua.melt is a library that allows which points to accept, formats to read and
-what you master config looks like. Melt will merge these in predictable 
-sensible precedence order while  giving your user plenty of touch points and 
-formats too choose.
+what you master config looks like. Melt will merge these in predictable sensible precedence order 
+while  giving your user plenty of touch points and formats too choose.
 
-## Get it over with
+## Make it simple
 
 `lua.melt` provides a simple, powerful API to:
 
