@@ -1,8 +1,13 @@
 local utils = require("lua.melt.utils")
 local readers = require("lua.melt.readers")
+local logger = require("lual").logger()
 
 -- Load declarative engine
 local declarative_engine = require("lua.melt.declarative")
+
+-- Setup logging (Stage 3)
+local logging = require("lua.melt.logging")
+logging.setup_logging()
 
 -- Forward declaration for Config object
 local Config = {}
@@ -57,8 +62,8 @@ function Config:add_file(filepath, type_hint)
   end
 
   if parse_error_msg then
-    -- Optional: print warning, or allow API user to get last error
-    print("Warning: Failed to load file " .. filepath .. ": " .. parse_error_msg)
+    -- Optional: logger.info warning, or allow API user to get last error
+    logger.info("Warning: Failed to load file " .. filepath .. ": " .. parse_error_msg)
   elseif actual_data then
     self.data = utils.deep_merge(self.data, actual_data)
   end
@@ -145,7 +150,7 @@ function Melt.merge(sources_list)
   local config_obj = Config:new()
 
   if type(sources_list) ~= "table" then
-    -- Or print a warning, or error, depending on desired strictness
+    -- Or logger.info a warning, or error, depending on desired strictness
     return config_obj
   end
 
@@ -155,26 +160,26 @@ function Melt.merge(sources_list)
         if type(item.source) == "table" then
           config_obj:add_table(item.source)
         else
-          print("Warning: Source type 'table'/'defaults' expects a 'source' field with a table value.")
+          logger.warn("Warning: Source type 'table'/'defaults' expects a 'source' field with a table value.")
         end
       elseif item.type == "file" then
         if type(item.path) == "string" then
           -- item.file_type can be passed as the second argument to add_file
           config_obj:add_file(item.path, item.file_type)
         else
-          print("Warning: Source type 'file' expects a 'path' field with a string value.")
+          logger.warn("Warning: Source type 'file' expects a 'path' field with a string value.")
         end
       elseif item.type == "env" then
         if type(item.prefix) == "string" then
           config_obj:add_env(item.prefix)
         else
-          print("Warning: Source type 'env' expects a 'prefix' field with a string value.")
+          logger.warn("Warning: Source type 'env' expects a 'prefix' field with a string value.")
         end
       else
-        print("Warning: Unknown source type: " .. tostring(item.type))
+        logger.warn("Warning: Unknown source type: " .. tostring(item.type))
       end
     else
-      print("Warning: Invalid item in sources_list. Each item should be a table with a 'type' field.")
+      logger.warn("Warning: Invalid item in sources_list. Each item should be a table with a 'type' field.")
     end
   end
 

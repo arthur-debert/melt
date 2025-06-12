@@ -23,11 +23,9 @@ readers.read_cmdline_options = cmdline_reader.read_options -- Added cmdline read
 -- @return The input Lua table.
 function readers.read_lua_table(tbl)
   if type(tbl) ~= "table" then
-    print("Warning: read_lua_table expects a table, got " .. type(tbl))
     return {}
   end
   return tbl
 end
-
 
 return readers

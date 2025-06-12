@@ -39,8 +39,8 @@ jobs:
         env:
           PKG_NAME: melt
         run: |
-          chmod +x ./bin/get-latest-spec
-          ROCKSPEC_FILE=$(./bin/get-latest-spec)
+          chmod +x ./bin/lua/get-latest-spec
+          ROCKSPEC_FILE=$(./bin/lua/get-latest-spec)
           echo "rockspec_file=$ROCKSPEC_FILE" >> $GITHUB_OUTPUT
           echo "Using rockspec: $ROCKSPEC_FILE"
 
