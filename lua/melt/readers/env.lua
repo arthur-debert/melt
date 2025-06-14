@@ -1,4 +1,4 @@
--- Environment variable reader for lua.melt
+-- Environment variable reader for melt
 
 local env_reader = {}
 local logger = require("lual").logger()

@@ -1,4 +1,4 @@
-local env_reader = require("lua.melt.readers.env")
+local env_reader = require("melt.readers.env")
 
 -- luacheck: globals describe it before_each after_each setup teardown
 -- luacheck: ignore assert.are assert.are.same
@@ -31,7 +31,7 @@ describe("Environment Variables Reader", function()
           port = 5432 -- Converted to number
         },
         feature = {
-          flag_x = true, -- Converted to boolean
+          flag_x = true,    -- Converted to boolean
           timeout_y = 100.5 -- Converted to number
         }
       }

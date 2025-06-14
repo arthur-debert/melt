@@ -2,7 +2,7 @@
 -- luacheck: globals describe it before_each after_each setup teardown
 -- luacheck: ignore assert.are assert.are.same assert.is_true assert.is_nil assert.has_error
 
-local Melt = require("lua.melt")
+local Melt = require("melt")
 
 describe("Declarative Engine - System Configuration Tests", function()
     local temp_files = {}
@@ -289,7 +289,6 @@ user_only = "user_value"
                     })
                     assert.are.equal(0, #errors2)
                     assert.is_nil(config2:get("system_setting_default_test"))
-
                 else
                     pending("Could not create test system config file for default omission test")
                 end

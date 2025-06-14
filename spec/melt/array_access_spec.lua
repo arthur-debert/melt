@@ -2,7 +2,7 @@
 -- luacheck: globals describe it before_each after_each setup teardown
 -- luacheck: ignore assert.are assert.are.same assert.is_true assert.is_nil assert.has_error
 
-local Melt = require("lua.melt")
+local Melt = require("melt")
 
 describe("Array Access Tests", function()
     describe("Declarative config array access", function()

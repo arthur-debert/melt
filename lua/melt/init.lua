@@ -1,12 +1,12 @@
-local utils = require("lua.melt.utils")
-local readers = require("lua.melt.readers")
+local utils = require("melt.utils")
+local readers = require("melt.readers")
 local logger = require("lual").logger()
 
 -- Load declarative engine
-local declarative_engine = require("lua.melt.declarative")
+local declarative_engine = require("melt.declarative")
 
 -- Setup logging (Stage 3)
-local logging = require("lua.melt.logging")
+local logging = require("melt.logging")
 logging.setup_logging()
 
 -- Forward declaration for Config object

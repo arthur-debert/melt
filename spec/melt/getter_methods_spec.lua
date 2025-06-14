@@ -1,4 +1,4 @@
-local Melt = require("lua.melt")
+local Melt = require("melt")
 
 -- Suppress luacheck warnings
 -- luacheck: globals describe it before_each after_each setup teardown
@@ -41,15 +41,15 @@ describe("Getter Methods", function()
   it(":get(key) should retrieve a full sub-table", function()
     local expected_server = { host = "localhost", port = 8080, protocols = { "http", "https" } }
     assert.are.same(expected_server, config:get("server"))
-    
+
     local expected_temp_targets = { cpu = 79.5, case = 72.0 }
     assert.are.same(expected_temp_targets, config:get("database.temp_targets")) -- From TOML
   end)
-  
+
   it(":get(key) should retrieve an array/list element by 1-based index", function()
     assert.are.equal("http", config:get("server.protocols[1]"))
     assert.are.equal("https", config:get("server.protocols[2]"))
-    assert.is_nil(config:get("server.protocols[3]")) -- Out of bounds
+    assert.is_nil(config:get("server.protocols[3]"))          -- Out of bounds
     assert.are.equal(8000.0, config:get("database.ports[1]")) -- From TOML, adjusted to float
     assert.are.equal(8001.0, config:get("database.ports[2]")) -- From TOML, adjusted to float
   end)
@@ -59,7 +59,7 @@ describe("Getter Methods", function()
     assert.is_nil(config:get("server.non_existent_nested_key"))
     assert.is_nil(config:get("database.ports[10]")) -- out of bounds
   end)
-  
+
   it(":get(key) should return nil for an invalid key type", function()
     assert.is_nil(config:get(123))
     assert.is_nil(config:get({}))
@@ -69,7 +69,7 @@ describe("Getter Methods", function()
     local data = config:get_table()
     assert.are.equal("app_name", data.name)
     assert.are.equal("localhost", data.server.host)
-    assert.are.equal("TOML Example", data.title) -- From TOML
+    assert.are.equal("TOML Example", data.title)   -- From TOML
     assert.is_true(type(data.database) == "table") -- From TOML
   end)
 end)

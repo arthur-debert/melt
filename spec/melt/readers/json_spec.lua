@@ -1,4 +1,4 @@
-local json_reader = require("lua.melt.readers.json")
+local json_reader = require("melt.readers.json")
 
 describe("JSON Reader", function()
   describe("read_json_file", function()
@@ -30,10 +30,10 @@ describe("JSON Reader", function()
       assert.is_nil(data)
       assert.is_string(err)
       assert.is_true(string.find(err, "Failed to parse JSON", 1, true) ~= nil or
-                     string.find(err, "lexical error", 1, true) ~= nil or
-                     string.find(err, "unexpected symbol", 1, true) ~= nil or
-                     string.find(err, "expected value", 1, true) ~= nil or
-                     string.find(err, "unterminated object", 1, true) ~= nil)
+        string.find(err, "lexical error", 1, true) ~= nil or
+        string.find(err, "unexpected symbol", 1, true) ~= nil or
+        string.find(err, "expected value", 1, true) ~= nil or
+        string.find(err, "unterminated object", 1, true) ~= nil)
 
       -- Teardown: Remove the temporary file
       os.remove(malformed_json_path)

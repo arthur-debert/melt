@@ -2,7 +2,7 @@
 -- luacheck: globals describe it before_each after_each setup teardown
 -- luacheck: ignore assert.are assert.are.same assert.is_true assert.is_nil assert.has_error
 
-local Melt = require("lua.melt")
+local Melt = require("melt")
 
 describe("Declarative Engine - Phase A", function()
     describe("melt.declare() basic functionality", function()
@@ -203,7 +203,7 @@ describe("Declarative Engine - Phase A", function()
 
             -- Non-existent paths or invalid access
             assert.is_nil(config:get("nonexistent.array[1]")) -- Base 'nonexistent' does not exist
-            assert.is_nil(config:get("list[abc]"))             -- Invalid index format (non-numeric)
+            assert.is_nil(config:get("list[abc]"))            -- Invalid index format (non-numeric)
             assert.is_nil(config:get("list[1.2]"))            -- Invalid index format (float)
             assert.is_nil(config:get("list[-1]"))             -- Invalid index format (negative)
             assert.is_nil(config:get("empty_list[1]"))        -- Accessing element in an empty list

@@ -1,4 +1,4 @@
-local toml_reader = require("lua.melt.readers.toml")
+local toml_reader = require("melt.readers.toml")
 
 describe("TOML Reader", function()
   describe("read_toml_file", function()

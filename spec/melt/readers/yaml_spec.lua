@@ -1,4 +1,4 @@
-local yaml_reader = require("lua.melt.readers.yaml")
+local yaml_reader = require("melt.readers.yaml")
 
 describe("YAML Reader", function()
   describe("read_yaml_file", function()

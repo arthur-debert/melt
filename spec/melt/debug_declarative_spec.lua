@@ -1,5 +1,5 @@
 -- Debug test for declarative engine
-local Melt = require("lua.melt")
+local Melt = require("melt")
 local logger = require("lual").logger()
 
 describe("Debug Declarative Engine", function()

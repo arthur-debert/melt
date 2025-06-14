@@ -1,5 +1,5 @@
 -- Import the ini_config library
-local ini_config = require("lua.melt.lib.ini_config")
+local ini_config = require("melt.lib.ini_config")
 
 local config_reader = {}
 
@@ -7,7 +7,7 @@ local config_reader = {}
 -- @param filepath Path to the CONFIG file.
 -- @return A Lua table with the CONFIG content, or an empty table on error.
 function config_reader.read_config_file(filepath)
-  local results = {pcall(ini_config.read, filepath)}
+  local results = { pcall(ini_config.read, filepath) }
   local success = results[1]
   local data = results[2]
   local err_msg_from_lib = results[3] -- ini_config.read might return (nil, message)
@@ -26,10 +26,11 @@ function config_reader.read_config_file(filepath)
         -- if our library is silent.
         local file_exists_check = io.open(filepath, "r")
         if file_exists_check then
-            file_exists_check:close()
-            return nil, "CONFIG parsing resulted in nil without specific error by library." -- Or return {}, nil if nil is valid empty
+          file_exists_check:close()
+          return nil,
+              "CONFIG parsing resulted in nil without specific error by library."           -- Or return {}, nil if nil is valid empty
         else
-            return nil, "Could not open file " .. filepath .. ": No such file or directory"
+          return nil, "Could not open file " .. filepath .. ": No such file or directory"
         end
       end
     end

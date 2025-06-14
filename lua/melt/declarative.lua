@@ -1,5 +1,5 @@
-local utils = require("lua.melt.utils")
-local readers = require("lua.melt.readers")
+local utils = require("melt.utils")
+local readers = require("melt.readers")
 
 -- Forward declaration for DeclarativeConfig object
 local DeclarativeConfig = {}

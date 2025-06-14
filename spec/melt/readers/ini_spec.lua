@@ -1,4 +1,4 @@
-local ini_reader = require("lua.melt.readers.ini")
+local ini_reader = require("melt.readers.ini")
 
 describe("INI Reader", function()
   describe("read_ini_file", function()

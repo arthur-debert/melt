@@ -1,11 +1,11 @@
 -- Require individual reader modules
-local json_reader = require("lua.melt.readers.json")
-local yaml_reader = require("lua.melt.readers.yaml")
-local toml_reader = require("lua.melt.readers.toml")
-local env_reader = require("lua.melt.readers.env")
-local ini_reader = require("lua.melt.readers.ini")
-local config_reader = require("lua.melt.readers.config")
-local cmdline_reader = require("lua.melt.readers.cmdline") -- Added cmdline reader
+local json_reader = require("melt.readers.json")
+local yaml_reader = require("melt.readers.yaml")
+local toml_reader = require("melt.readers.toml")
+local env_reader = require("melt.readers.env")
+local ini_reader = require("melt.readers.ini")
+local config_reader = require("melt.readers.config")
+local cmdline_reader = require("melt.readers.cmdline") -- Added cmdline reader
 
 local readers = {}
 

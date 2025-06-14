@@ -1,7 +1,7 @@
 -- luacheck: globals describe it
-local cmdline_reader = require "lua.melt.readers.cmdline"
+local cmdline_reader = require "melt.readers.cmdline"
 
-describe("lua.melt.readers.cmdline", function()
+describe("melt.readers.cmdline", function()
   describe(".read_options()", function()
     it("should return an empty table for non-table input", function()
       assert.same({}, cmdline_reader.read_options(nil))

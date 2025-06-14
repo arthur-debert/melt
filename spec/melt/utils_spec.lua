@@ -1,11 +1,10 @@
-local utils = require("lua.melt.utils")
+local utils = require("melt.utils")
 
 -- Suppress luacheck warnings
 -- luacheck: globals describe it before_each after_each setup teardown
 -- luacheck: ignore assert.are assert.are.same
 
 describe("Melt Utils", function()
-
   describe("deep_merge", function()
     it("should merge with an empty source table", function()
       local target = { a = 1, b = 2 }
@@ -42,14 +41,14 @@ describe("Melt Utils", function()
       local result = utils.deep_merge(target, source)
       assert.are.same(expected, result)
     end)
-    
+
     it("should handle arrays within tables correctly (source replaces target array)", function()
-      local target = { a = {1, 2, 3}, b = { x = 1} }
-      local source = { a = {4, 5}, b = { y = 2} }
+      local target = { a = { 1, 2, 3 }, b = { x = 1 } }
+      local source = { a = { 4, 5 }, b = { y = 2 } }
       local result = utils.deep_merge(target, source)
       -- Standard behavior: source array replaces target array if key is the same
       -- Deep merging arrays element by element is a different strategy.
-      assert.are.same({ a = {4, 5}, b = {x = 1, y = 2} }, result)
+      assert.are.same({ a = { 4, 5 }, b = { x = 1, y = 2 } }, result)
     end)
 
     it("should not modify the original target table", function()
@@ -68,5 +67,4 @@ describe("Melt Utils", function()
       assert.are.same(original_source_deep_copy, source)
     end)
   end)
-
 end)

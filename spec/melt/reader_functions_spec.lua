@@ -1,4 +1,4 @@
-local readers = require("lua.melt.readers")
+local readers = require("melt.readers")
 
 -- Suppress luacheck warnings
 -- luacheck: globals describe it before_each after_each setup teardown
@@ -10,7 +10,7 @@ describe("Melt Reader Functions", function()
       local tbl = { a = 1, b = { c = 2 } }
       assert.are.same(tbl, readers.read_lua_table(tbl))
     end)
-    
+
     it("should return an empty table if input is not a table", function()
       assert.are.same({}, readers.read_lua_table(nil))
       assert.are.same({}, readers.read_lua_table("string"))

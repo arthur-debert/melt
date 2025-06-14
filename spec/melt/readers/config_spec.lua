@@ -1,4 +1,4 @@
-local config_reader = require("lua.melt.readers.config")
+local config_reader = require("melt.readers.config")
 
 describe("CONFIG Reader", function()
   describe("read_config_file", function()

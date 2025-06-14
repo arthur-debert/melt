@@ -1,4 +1,4 @@
-local Melt = require("lua.melt")
+local Melt = require("melt")
 
 -- Suppress luacheck warnings
 -- luacheck: globals describe it before_each after_each setup teardown
@@ -11,10 +11,10 @@ describe("Iterative API (Melt.merge)", function()
 
     local sources = {
       { type = "table", source = { default_setting = true, common_key = "from_table" } },
-      { type = "file", path = "spec/melt/sample_config.toml" },
-      { type = "env", prefix = "ITER_APP_" }
+      { type = "file",  path = "spec/melt/sample_config.toml" },
+      { type = "env",   prefix = "ITER_APP_" }
     }
-    
+
     local config = Melt.merge(sources)
     _G.os.environ = old_os_environ -- Restore
 
@@ -27,14 +27,14 @@ describe("Iterative API (Melt.merge)", function()
 
   it("should handle invalid items in sources_list gracefully", function()
     local sources = {
-      { type = "table", source = { val = 1 } },
+      { type = "table",    source = { val = 1 } },
       { type = "invalid" },
       { path = "some_path" }, -- missing type
-      { type = "file", source = "not_a_path_string" }
+      { type = "file",     source = "not_a_path_string" }
     }
     -- Expect no errors, and valid sources to be processed
     local config = Melt.merge(sources)
     local data = config:get_table()
-    assert.are.same({val = 1}, data) -- Only the first valid source should be processed
+    assert.are.same({ val = 1 }, data) -- Only the first valid source should be processed
   end)
 end)

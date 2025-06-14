@@ -2,8 +2,8 @@
 -- luacheck: globals describe it before_each after_each setup teardown
 -- luacheck: ignore assert.are assert.are.same assert.is_true assert.is_nil assert.has_error
 
-local Melt = require("lua.melt")
-local readers = require("lua.melt.readers")
+local Melt = require("melt")
+local readers = require("melt.readers")
 
 describe("Declarative Engine - Dependency Injection", function()
     -- Directly test the readers.read_env_vars function with a mock environment

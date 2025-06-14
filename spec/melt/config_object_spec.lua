@@ -1,4 +1,4 @@
-local Melt = require("lua.melt")
+local Melt = require("melt")
 
 -- Suppress luacheck warnings
 -- luacheck: globals describe it before_each after_each setup teardown
@@ -33,14 +33,14 @@ describe("Config Object and Chained API", function()
     assert.are.equal("JSON Example", data.title)
     assert.are.equal("Tom Preston-Werner", data.owner.name)
   end)
-  
+
   it(":add_file() should auto-detect JSON files by extension", function()
     local config = Melt.new()
     config:add_file("spec/melt/sample_config.json") -- .json extension
     local data = config:get_table()
     assert.are.equal("JSON Example", data.title)
   end)
-  
+
   it(":add_file() should load and merge data from sample_config.yaml", function()
     local config = Melt.new()
     config:add_file("spec/melt/sample_config.yaml")
@@ -48,7 +48,7 @@ describe("Config Object and Chained API", function()
     assert.are.equal("YAML Example", data.title)
     assert.are.equal("Tom Preston-Werner", data.owner.name)
   end)
-  
+
   it(":add_file() should auto-detect YAML files by extension", function()
     local config = Melt.new()
     config:add_file("spec/melt/sample_config.yaml") -- .yaml extension
@@ -79,9 +79,9 @@ describe("Config Object and Chained API", function()
 
     local config = Melt.new()
     config:add_table({ table_var = "table_value" })
-          :add_file("spec/melt/sample_config.toml")
-          :add_env("MYCHAIN_")
-    
+        :add_file("spec/melt/sample_config.toml")
+        :add_env("MYCHAIN_")
+
     _G.os.environ = old_os_environ -- Restore
 
     local data = config:get_table()

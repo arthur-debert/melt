@@ -44,8 +44,8 @@ describe("Library Loading Failure Tests", function()
             end
 
             -- Reload the json reader to trigger the library loading failure
-            package.loaded["lua.melt.readers.json"] = nil
-            local json_reader = require("lua.melt.readers.json")
+            package.loaded["melt.readers.json"] = nil
+            local json_reader = require("melt.readers.json")
 
             -- Create a test JSON file
             local json_file = "test_library_failure.json"
@@ -74,8 +74,8 @@ describe("Library Loading Failure Tests", function()
             end
 
             -- Reload the yaml reader to trigger the library loading failure
-            package.loaded["lua.melt.readers.yaml"] = nil
-            local yaml_reader = require("lua.melt.readers.yaml")
+            package.loaded["melt.readers.yaml"] = nil
+            local yaml_reader = require("melt.readers.yaml")
 
             -- Create a test YAML file
             local yaml_file = "test_library_failure.yaml"
@@ -104,8 +104,8 @@ describe("Library Loading Failure Tests", function()
             end
 
             -- Reload the toml reader to trigger the library loading failure
-            package.loaded["lua.melt.readers.toml"] = nil
-            local toml_reader = require("lua.melt.readers.toml")
+            package.loaded["melt.readers.toml"] = nil
+            local toml_reader = require("melt.readers.toml")
 
             -- Create a test TOML file
             local toml_file = "test_library_failure.toml"
@@ -134,11 +134,11 @@ describe("Library Loading Failure Tests", function()
             end
 
             -- Reload necessary modules
-            package.loaded["lua.melt.readers.json"] = nil
-            package.loaded["lua.melt.readers.init"] = nil
-            package.loaded["lua.melt.readers"] = nil
+            package.loaded["melt.readers.json"] = nil
+            package.loaded["melt.readers.init"] = nil
+            package.loaded["melt.readers"] = nil
 
-            local Melt = require("lua.melt")
+            local Melt = require("melt")
 
             -- Create a test JSON config file
             local json_config = "declarative_library_test.json"
@@ -174,11 +174,11 @@ describe("Library Loading Failure Tests", function()
             end
 
             -- Reload necessary modules
-            package.loaded["lua.melt.readers.yaml"] = nil
-            package.loaded["lua.melt.readers.init"] = nil
-            package.loaded["lua.melt.readers"] = nil
+            package.loaded["melt.readers.yaml"] = nil
+            package.loaded["melt.readers.init"] = nil
+            package.loaded["melt.readers"] = nil
 
-            local Melt = require("lua.melt")
+            local Melt = require("melt")
 
             -- Create a test YAML config file
             local yaml_config = "declarative_library_test.yaml"
@@ -214,11 +214,11 @@ describe("Library Loading Failure Tests", function()
             end
 
             -- Reload necessary modules
-            package.loaded["lua.melt.readers.toml"] = nil
-            package.loaded["lua.melt.readers.init"] = nil
-            package.loaded["lua.melt.readers"] = nil
+            package.loaded["melt.readers.toml"] = nil
+            package.loaded["melt.readers.init"] = nil
+            package.loaded["melt.readers"] = nil
 
-            local Melt = require("lua.melt")
+            local Melt = require("melt")
 
             -- Create a test TOML config file
             local toml_config = "declarative_library_test.toml"
@@ -246,9 +246,9 @@ describe("Library Loading Failure Tests", function()
 
     describe("File read errors", function()
         it("should handle file permission errors gracefully", function()
-            _G.require = original_require -- Ensure original require for this test
-            package.loaded["lua.melt.readers.json"] = nil -- Force reload
-            local json_reader = require("lua.melt.readers.json")
+            _G.require = original_require             -- Ensure original require for this test
+            package.loaded["melt.readers.json"] = nil -- Force reload
+            local json_reader = require("melt.readers.json")
 
             local data, err = json_reader.read_json_file("/nonexistent/path/file.json")
             assert.is_nil(data)
@@ -257,9 +257,9 @@ describe("Library Loading Failure Tests", function()
         end)
 
         it("should handle malformed files gracefully", function()
-            _G.require = original_require -- Ensure original require for this test
-            package.loaded["lua.melt.readers.json"] = nil -- Force reload
-            local json_reader = require("lua.melt.readers.json")
+            _G.require = original_require             -- Ensure original require for this test
+            package.loaded["melt.readers.json"] = nil -- Force reload
+            local json_reader = require("melt.readers.json")
 
             local malformed_file = "malformed_test.json"
             local malformed_content = '{"incomplete": "json"'

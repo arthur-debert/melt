@@ -2,8 +2,8 @@
 -- luacheck: globals describe it before_each after_each setup teardown
 -- luacheck: ignore assert.are assert.are.same assert.is_true assert.is_nil assert.has_error
 
-local Melt = require("lua.melt")
-local readers = require("lua.melt.readers")
+local Melt = require("melt")
+local readers = require("melt.readers")
 local logger = require("lual").logger()
 
 describe("Declarative Engine - Integration Tests", function()
@@ -516,7 +516,7 @@ from_standard_name = true
             local config, errors = Melt.declare({
                 app_name = "formatprecedence",
                 config_locations = {
-                    project = { test_dir },     -- Search in our test directory
+                    project = { test_dir }, -- Search in our test directory
                     system = false,
                     user = false,
                     file_names = { "myconfig" } -- Base name to look for

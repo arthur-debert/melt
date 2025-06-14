@@ -1,4 +1,4 @@
--- Command-line options reader for lua.melt
+-- Command-line options reader for melt
 local logger = require("lual").logger()
 
 local cmdline_reader = {}

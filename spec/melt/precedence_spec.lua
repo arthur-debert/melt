@@ -1,4 +1,4 @@
-local Melt = require("lua.melt")
+local Melt = require("melt")
 
 -- Suppress luacheck warnings
 -- luacheck: globals describe it before_each after_each setup teardown
@@ -21,7 +21,7 @@ describe("Precedence Rules", function()
       PRECEDENCE_APP_NEW_FEATURE = "awesome",
       PRECEDENCE_APP_TIMEOUT = "100" -- env var string, should be converted
     }
-    
+
     local config = Melt.new()
     config:add_table(defaults)
     config:add_file("spec/melt/sample_config.toml") -- TOML has service_host, log_level, feature_x_enabled
@@ -31,11 +31,11 @@ describe("Precedence Rules", function()
 
     -- Assertions
     assert.are.equal("env_host", config:get("service_host")) -- env overrides file and default
-    assert.are.equal("debug", config:get("log_level"))     -- env overrides file and default
-    assert.is_true(config:get("unique_default"))           -- from defaults, not overridden
-    assert.is_true(config:get("feature_x_enabled"))        -- from file, not overridden by env
-    assert.are.equal("awesome", config:get("new_feature")) -- from env only
-    assert.are.equal(100, config:get("timeout")) -- env (converted to number) overrides default
+    assert.are.equal("debug", config:get("log_level"))       -- env overrides file and default
+    assert.is_true(config:get("unique_default"))             -- from defaults, not overridden
+    assert.is_true(config:get("feature_x_enabled"))          -- from file, not overridden by env
+    assert.are.equal("awesome", config:get("new_feature"))   -- from env only
+    assert.are.equal(100, config:get("timeout"))             -- env (converted to number) overrides default
 
     -- Check values from TOML that were not in defaults and not overridden by ENV
     assert.are.equal("TOML Example", config:get("title"))
