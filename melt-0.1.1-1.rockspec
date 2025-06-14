@@ -15,7 +15,7 @@ description = {
 dependencies = {
 	"lua >= 5.1",
 	"penlight >= 1.14.0",
-	"lual >= 1.0.11",
+	"lual >= 1.0.13",
 	"string-format-all >= 0.2.0", -- Package name uses hyphens, but require() uses dots
 	"lua-toml >= 2.0-1", -- The module name is 'toml' despite package name being 'lua-toml'
 	"dkjson >= 2.5", -- For JSON file support
@@ -26,12 +26,23 @@ test_dependencies = {
 	"luacov",
 }
 build = {
-	type = "builtin",
-	install = {
-		lua = {
-			["melt"] = "lua/melt",
-		},
-	},
+   type = "builtin",
+-- Generated module mappings for rockspec
+modules = {
+   ["melt.declarative"] = "lua/melt/declarative.lua",
+   ["melt.lib.ini_config"] = "lua/melt/lib/ini_config.lua",
+   ["melt.logging"] = "lua/melt/logging.lua",
+   ["melt.readers.cmdline"] = "lua/melt/readers/cmdline.lua",
+   ["melt.readers.config"] = "lua/melt/readers/config.lua",
+   ["melt.readers.env"] = "lua/melt/readers/env.lua",
+   ["melt.readers.ini"] = "lua/melt/readers/ini.lua",
+   ["melt.readers.json"] = "lua/melt/readers/json.lua",
+   ["melt.readers.toml"] = "lua/melt/readers/toml.lua",
+   ["melt.readers.yaml"] = "lua/melt/readers/yaml.lua",
+   ["melt.readers"] = "lua/melt/readers.lua",
+   ["melt.utils"] = "lua/melt/utils.lua",
+   ["melt"] = "lua/melt/init.lua",
+}
 }
 test = {
 	type = "busted",
